@@ -1,0 +1,65 @@
+# Unity-generated folders (regenerated locally on first open)
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Asset meta files MUST be committed alongside their assets
+!/[Aa]ssets/**/*.meta
+
+# IDE / Editor caches
+.vs/
+.vscode/
+.idea/
+.gradle/
+.consulo/
+ExportedObj/
+
+# Plastic SCM (Unity default VCS — not used here)
+.plastic/
+
+# Auto-generated solution / project files (Unity regenerates these)
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Builds and packages
+*.apk
+*.aab
+*.app
+*.unitypackage
+
+# Crash reports
+sysinfo.txt
+crashlytics-build.properties
+
+# Addressables / Streaming Assets generated bins
+/[Aa]ssets/AddressableAssetsData/*/*.bin*
+/[Aa]ssets/StreamingAssets/aa.meta
+/[Aa]ssets/StreamingAssets/aa/*
+
+# OS junk
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Desktop.ini
