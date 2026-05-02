@@ -29,12 +29,25 @@ public class ShootingController : MonoBehaviour
     [Tooltip("Random velocity error added when timing is off (small).")]
     public float maxAimErrorVelocity = 0.6f;
 
+    [Header("Dunk")]
+    [Tooltip("Max horizontal distance from the rim to trigger a dunk attempt.")]
+    public float dunkRange = 2.0f;
+    [Tooltip("How far above the player's center their extended arm reaches during a dunk. Player.y + this must be >= rim.y for a dunk to count — prevents dunking from directly below the rim while grounded or low in the air.")]
+    public float dunkReachHeight = 1.5f;
+    [Tooltip("Extra upward impulse applied to the shooter on dunk for visual flair.")]
+    public float dunkHopImpulse = 6f;
+    [Tooltip("Downward velocity applied to the ball on dunk. Must clear Hoop.minDownwardSpeed to count.")]
+    public float dunkBallSpeed = 10f;
+
     [Header("State (read-only)")]
     [Range(0f, 1f)] public float currentCharge;
     public bool isCharging;
 
+    private PlayerController playerCtrl;
+
     void Awake()
     {
+        playerCtrl = GetComponent<PlayerController>();
         if (targetHoop != null)
         {
             var hoop = targetHoop.GetComponent<Hoop>();
@@ -94,6 +107,11 @@ public class ShootingController : MonoBehaviour
 
     void Shoot()
     {
+        if (TryDunk()) return;
+
+        // No shot cancellation — the under-rim one-way barrier physically blocks balls fired from
+        // beneath the rim, so the ball bounces off the underside instead of scoring.
+
         Vector2 from = ball.transform.position;
         Vector2 to = targetHoop.position;
         float ballGravityScale = ball.GetComponent<Rigidbody2D>().gravityScale;
@@ -110,6 +128,33 @@ public class ShootingController : MonoBehaviour
         ball.lastShotPoints = fromOwnHalf ? 3 : 2;
 
         ball.Release(finalVel);
+    }
+
+    bool TryDunk()
+    {
+        bool airborne = playerCtrl != null && !playerCtrl.IsGrounded;
+        if (!airborne) return false;
+        // Horizontal proximity to the rim
+        if (Mathf.Abs(transform.position.x - targetHoop.position.x) > dunkRange) return false;
+        // Arm-at-or-above-rim — no dunks from directly below the rim
+        if (transform.position.y + dunkReachHeight < targetHoop.position.y) return false;
+
+        DoDunk();
+        return true;
+    }
+
+
+    void DoDunk()
+    {
+        // Small upward hop on the player for visual flair
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null) rb.linearVelocity = new Vector2(rb.linearVelocity.x, dunkHopImpulse);
+
+        // Drop the ball straight through the rim — fast enough to satisfy Hoop.minDownwardSpeed
+        ball.lastShotPoints = 2;
+        ball.Release(new Vector2(0f, -dunkBallSpeed));
+        ball.transform.position = (Vector3)targetHoop.position + new Vector3(0f, 0.30f, 0f);
+        Debug.Log("[BTierHoops] DUNK by player!");
     }
 
     float ChargeToPowerMultiplier(float charge)

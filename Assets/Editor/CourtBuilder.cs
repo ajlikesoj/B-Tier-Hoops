@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -6,6 +7,128 @@ using TMPro;
 
 public static class CourtBuilder
 {
+    // Block-letter shape table. Each letter is a list of (centerX, centerY, width, height) rectangles
+    // in a unit square [-0.5, 0.5] x [-0.5, 0.5]. Built from SpriteRenderer Quads — no TMP component
+    // means no editor gizmo can ever appear on the character.
+    static readonly Dictionary<char, (float x, float y, float w, float h)[]> LetterShapes =
+        new Dictionary<char, (float x, float y, float w, float h)[]>
+    {
+        ['A'] = new (float x, float y, float w, float h)[] {
+            (-0.40f, -0.05f, 0.20f, 0.90f),
+            ( 0.40f, -0.05f, 0.20f, 0.90f),
+            ( 0.00f,  0.40f, 1.00f, 0.20f),
+            ( 0.00f,  0.00f, 1.00f, 0.20f),
+        },
+        ['B'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            (-0.10f,  0.40f, 0.80f, 0.20f),
+            (-0.10f,  0.00f, 0.80f, 0.20f),
+            (-0.10f, -0.40f, 0.80f, 0.20f),
+            ( 0.40f,  0.20f, 0.20f, 0.40f),
+            ( 0.40f, -0.20f, 0.20f, 0.40f),
+        },
+        ['C'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 0.80f),
+            ( 0.00f,  0.40f, 1.00f, 0.20f),
+            ( 0.00f, -0.40f, 1.00f, 0.20f),
+        },
+        ['D'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            (-0.10f,  0.40f, 0.80f, 0.20f),
+            (-0.10f, -0.40f, 0.80f, 0.20f),
+            ( 0.40f,  0.00f, 0.20f, 0.80f),
+        },
+        ['E'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            ( 0.00f,  0.40f, 1.00f, 0.20f),
+            (-0.05f,  0.00f, 0.90f, 0.20f),
+            ( 0.00f, -0.40f, 1.00f, 0.20f),
+        },
+        ['F'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            ( 0.00f,  0.40f, 1.00f, 0.20f),
+            (-0.05f,  0.00f, 0.90f, 0.20f),
+        },
+        ['G'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 0.80f),
+            ( 0.00f,  0.40f, 1.00f, 0.20f),
+            ( 0.00f, -0.40f, 1.00f, 0.20f),
+            ( 0.40f, -0.20f, 0.20f, 0.40f),
+            ( 0.20f, -0.05f, 0.40f, 0.18f),
+        },
+        ['H'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            ( 0.40f,  0.00f, 0.20f, 1.00f),
+            ( 0.00f,  0.00f, 1.00f, 0.20f),
+        },
+        ['I'] = new (float x, float y, float w, float h)[] {
+            ( 0.00f,  0.40f, 1.00f, 0.20f),
+            ( 0.00f,  0.00f, 0.20f, 0.80f),
+            ( 0.00f, -0.40f, 1.00f, 0.20f),
+        },
+        ['J'] = new (float x, float y, float w, float h)[] {
+            ( 0.10f,  0.40f, 0.80f, 0.20f),    // top horizontal
+            ( 0.30f,  0.05f, 0.20f, 0.90f),    // right vertical (full height)
+            ( 0.00f, -0.40f, 0.60f, 0.20f),    // bottom horizontal (hook)
+            (-0.30f, -0.20f, 0.20f, 0.30f),    // left vertical (hook stem)
+        },
+        ['K'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            (-0.10f,  0.05f, 0.20f, 0.20f),
+            ( 0.10f,  0.25f, 0.20f, 0.20f),
+            ( 0.30f,  0.40f, 0.20f, 0.20f),
+            (-0.10f, -0.05f, 0.20f, 0.20f),
+            ( 0.10f, -0.25f, 0.20f, 0.20f),
+            ( 0.30f, -0.40f, 0.20f, 0.20f),
+        },
+        ['L'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            ( 0.00f, -0.40f, 1.00f, 0.20f),
+        },
+        ['N'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            ( 0.40f,  0.00f, 0.20f, 1.00f),
+            (-0.15f,  0.20f, 0.20f, 0.20f),
+            ( 0.00f,  0.00f, 0.20f, 0.20f),
+            ( 0.15f, -0.20f, 0.20f, 0.20f),
+        },
+        ['P'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            (-0.10f,  0.40f, 0.80f, 0.20f),
+            (-0.10f,  0.05f, 0.80f, 0.20f),
+            ( 0.40f,  0.25f, 0.20f, 0.50f),
+        },
+        ['R'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),
+            (-0.10f,  0.40f, 0.80f, 0.20f),
+            (-0.10f,  0.05f, 0.80f, 0.20f),
+            ( 0.40f,  0.25f, 0.20f, 0.50f),
+            ( 0.10f, -0.10f, 0.20f, 0.20f),
+            ( 0.30f, -0.30f, 0.20f, 0.20f),
+        },
+        ['S'] = new (float x, float y, float w, float h)[] {
+            ( 0.00f,  0.40f, 1.00f, 0.20f),
+            (-0.40f,  0.20f, 0.20f, 0.40f),
+            ( 0.00f,  0.00f, 1.00f, 0.20f),
+            ( 0.40f, -0.20f, 0.20f, 0.40f),
+            ( 0.00f, -0.40f, 1.00f, 0.20f),
+        },
+        ['V'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.20f, 0.20f, 0.60f),
+            ( 0.40f,  0.20f, 0.20f, 0.60f),
+            (-0.20f, -0.10f, 0.20f, 0.30f),
+            ( 0.20f, -0.10f, 0.20f, 0.30f),
+            ( 0.00f, -0.35f, 0.20f, 0.30f),
+        },
+        ['Y'] = new (float x, float y, float w, float h)[] {
+            (-0.40f,  0.30f, 0.20f, 0.40f),
+            ( 0.40f,  0.30f, 0.20f, 0.40f),
+            (-0.20f,  0.05f, 0.20f, 0.20f),
+            ( 0.20f,  0.05f, 0.20f, 0.20f),
+            ( 0.00f, -0.20f, 0.20f, 0.60f),
+        },
+    };
+
     // --- Court palette ---
     static readonly Color WoodLight = new Color(0.78f, 0.55f, 0.32f);
     static readonly Color WoodMid = new Color(0.62f, 0.42f, 0.22f);
@@ -28,6 +151,7 @@ public static class CourtBuilder
     static readonly Color ShortsDark = new Color(0.12f, 0.12f, 0.14f);
     static readonly Color ShoeWhite = new Color(0.96f, 0.96f, 0.96f);
     static readonly Color JerseyRed = new Color(0.86f, 0.16f, 0.16f);
+    static readonly Color JerseyBlue = new Color(0.18f, 0.40f, 0.85f);
     static readonly Color JerseyTrim = new Color(0.98f, 0.98f, 0.95f);
 
     // --- Ball palette ---
@@ -36,8 +160,29 @@ public static class CourtBuilder
 
     struct HoopRefs { public GameObject root; public Transform scoreTrigger; }
 
-    [MenuItem("BTierHoops/Build Court Scene")]
-    public static void BuildCourt()
+    // Player has no name yet — the planned account/signup flow will let the user enter one.
+    // Until then the score and win text just show the score for the player side.
+    const string PlayerName = "";
+
+    [MenuItem("BTierHoops/Build Court (vs F - Afsar)")]
+    public static void BuildCourtVsF() => BuildCourtForTier(AIController.Tier.F);
+
+    [MenuItem("BTierHoops/Build Court (vs D - Praneel)")]
+    public static void BuildCourtVsD() => BuildCourtForTier(AIController.Tier.D);
+
+    [MenuItem("BTierHoops/Build Court (vs C - Krish)")]
+    public static void BuildCourtVsC() => BuildCourtForTier(AIController.Tier.C);
+
+    [MenuItem("BTierHoops/Build Court (vs B - Vignesh)")]
+    public static void BuildCourtVsB() => BuildCourtForTier(AIController.Tier.B);
+
+    [MenuItem("BTierHoops/Build Court (vs A - Ishaan)")]
+    public static void BuildCourtVsA() => BuildCourtForTier(AIController.Tier.A);
+
+    [MenuItem("BTierHoops/Build Court (vs S - Jay)")]
+    public static void BuildCourtVsS() => BuildCourtForTier(AIController.Tier.S);
+
+    static void BuildCourtForTier(AIController.Tier aiTier)
     {
         ClearSceneInternal();
 
@@ -48,14 +193,14 @@ public static class CourtBuilder
         BuildFloor(ws);
 
         var rightHoop = BuildHoop(ws, hoopX: 9f, side: +1);
-        BuildHoop(ws, hoopX: -9f, side: -1);
+        var leftHoop = BuildHoop(ws, hoopX: -9f, side: -1);
 
         var ball = BuildBall(ws, circle, new Vector3(0f, 1f, 0f));
         BuildPlayerContainment();
         var playerSpawn = new Vector3(-3f, 0f, 0f);
-        var player = BuildPlayer(ws, circle, playerSpawn, JerseyRed, "Player", attachController: true);
+        var player = BuildPlayer(ws, circle, playerSpawn, JerseyRed, "Player", attachController: true, initialFacing: +1);
 
-        // Wire shooting controller
+        // Wire player shooting controller
         var shooter = player.AddComponent<ShootingController>();
         shooter.ball = ball;
         shooter.targetHoop = rightHoop.scoreTrigger;
@@ -63,16 +208,45 @@ public static class CourtBuilder
         // Charge meter visual above player
         BuildChargeMeter(ws, player.transform, shooter);
 
+        // AI opponent — blue jersey, right-side spawn, attacks left hoop
+        var aiSpawn = new Vector3(3f, 0f, 0f);
+        var aiTierData = AIController.GetTierData(aiTier);
+        var ai = BuildPlayer(ws, circle, aiSpawn, JerseyBlue, "AI", attachController: false, initialFacing: -1, tierData: aiTierData);
+        // Big tier letter on the AI's jersey (e.g. "F" for Afsar, "D" for Praneel)
+        BuildJerseyLetter(ws, ai.transform, aiTier.ToString()[0], JerseyTrim, aiTierData.widthScale, aiTierData.heightScale);
+        // Floating name tag above the AI's head
+        BuildNameTag(ws, ai.transform, aiTierData.displayName, aiTierData.heightScale);
+        var aiCtrl = ai.AddComponent<AIController>();
+        aiCtrl.tier = aiTier;
+        aiCtrl.ApplyTierPreset();
+        aiCtrl.ball = ball;
+        aiCtrl.targetHoop = leftHoop.scoreTrigger;
+        aiCtrl.opponent = player.transform;
+        aiCtrl.ownHoop = rightHoop.scoreTrigger;
+
+        // Wire player ↔ ai for steal mechanic
+        var playerCtrl = player.GetComponent<PlayerController>();
+        if (playerCtrl != null)
+        {
+            playerCtrl.opponent = ai.transform;
+            playerCtrl.ball = ball;
+        }
+
         // Game manager + UI
         var gm = BuildGameManager(ball);
         gm.player = player.transform;
         gm.playerSpawnPosition = playerSpawn;
+        gm.ai = ai.transform;
+        gm.aiSpawnPosition = aiSpawn;
+        gm.playerName = PlayerName;
+        gm.aiName = aiTierData.displayName;
         BuildUI(gm);
 
         SetupCamera();
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-        Debug.Log("[BTierHoops] Court built. Walk into the ball, hold F to charge, release to shoot.");
+        string playerLabel = string.IsNullOrEmpty(PlayerName) ? "Player" : PlayerName;
+        Debug.Log($"[BTierHoops] Court built — {playerLabel} vs {aiTierData.displayName} (tier {aiTier}).");
     }
 
     [MenuItem("BTierHoops/Clear Scene")]
@@ -147,6 +321,20 @@ public static class CourtBuilder
         col.size = size;
     }
 
+    static void AddOneWayUnderRimBarrier(Transform parent, Vector3 pos, Vector2 size)
+    {
+        var go = new GameObject("UnderRimBarrier");
+        go.transform.SetParent(parent);
+        go.transform.position = pos;
+        var col = go.AddComponent<BoxCollider2D>();
+        col.size = size;
+        col.usedByEffector = true;
+        var effector = go.AddComponent<PlatformEffector2D>();
+        effector.useOneWay = true;
+        effector.surfaceArc = 180f;
+        effector.rotationalOffset = 180f; // rotate the solid arc to face DOWN — ball from below = solid, ball from above = pass-through
+    }
+
     // ---------- Player containment (blocks player, ball passes through) ----------
     static void BuildPlayerContainment()
     {
@@ -190,6 +378,14 @@ public static class CourtBuilder
         float backRimX = rimCenterX + 0.55f * side;  // backboard-side tip
         AddInvisibleCollider(root.transform, "FrontRim", new Vector3(frontRimX, 2.10f, 0), new Vector2(0.10f, 0.10f));
         AddInvisibleCollider(root.transform, "BackRim", new Vector3(backRimX, 2.10f, 0), new Vector2(0.10f, 0.10f));
+
+        // One-way barrier inside the rim opening — solid for balls moving UP through it (so a shot
+        // fired from underneath the rim bounces off the underside instead of popping above and
+        // dropping back through to score), pass-through for balls falling from ABOVE (legitimate
+        // shots and dunks score normally). Positioned so a ball moving up gets stopped while still
+        // inside the score-trigger volume — ensures only the upward OnTriggerEnter fires (no score),
+        // never a second downward one.
+        AddOneWayUnderRimBarrier(root.transform, new Vector3(rimCenterX, 2.075f, 0f), new Vector2(1.0f, 0.05f));
 
         float netCenterX = hoopX - 0.95f * side;
         for (int i = -2; i <= 2; i++)
@@ -247,8 +443,13 @@ public static class CourtBuilder
     }
 
     // ---------- Player (side-profile, +X = front/forward) ----------
-    static GameObject BuildPlayer(Sprite ws, Sprite circle, Vector3 position, Color jersey, string name, bool attachController)
+    static GameObject BuildPlayer(Sprite ws, Sprite circle, Vector3 position, Color jersey, string name, bool attachController, int initialFacing = 1, AIController.TierData? tierData = null)
     {
+        Color skin = tierData?.skinColor ?? SkinTone;
+        Color hairColor = tierData?.hairColor ?? HairBlack;
+        float hScale = tierData?.heightScale ?? 1f;
+        float wScale = tierData?.widthScale ?? 1f;
+
         var player = new GameObject(name);
         player.transform.position = position;
 
@@ -259,25 +460,26 @@ public static class CourtBuilder
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
         var col = player.AddComponent<BoxCollider2D>();
-        col.size = new Vector2(0.85f, 1.7f);
+        col.size = new Vector2(0.85f * wScale, 1.7f * hScale);
         col.offset = Vector2.zero;
 
         var visuals = new GameObject("Visuals");
         visuals.transform.SetParent(player.transform);
         visuals.transform.localPosition = Vector3.zero;
-        visuals.transform.localScale = new Vector3(1f, 1f, 1f);
+        float facingSign = initialFacing < 0 ? -1f : 1f;
+        visuals.transform.localScale = new Vector3(facingSign * wScale, hScale, 1f);
 
         Quad("BackLeg", ws, new Vector3(-0.10f, -0.55f, 0), new Vector3(0.26f, 0.55f, 1), ShortsDark, 9, visuals.transform);
         Quad("BackShoe", ws, new Vector3(-0.10f, -0.83f, 0), new Vector3(0.32f, 0.10f, 1), ShoeWhite, 9, visuals.transform);
-        Quad("BackArm", ws, new Vector3(-0.18f, 0.05f, 0), new Vector3(0.16f, 0.65f, 1), SkinTone, 10, visuals.transform);
-        Quad("BackHand", ws, new Vector3(-0.18f, -0.30f, 0), new Vector3(0.20f, 0.18f, 1), SkinTone, 10, visuals.transform);
+        Quad("BackArm", ws, new Vector3(-0.18f, 0.05f, 0), new Vector3(0.16f, 0.65f, 1), skin, 10, visuals.transform);
+        Quad("BackHand", ws, new Vector3(-0.18f, -0.30f, 0), new Vector3(0.20f, 0.18f, 1), skin, 10, visuals.transform);
         Quad("Body", ws, new Vector3(0f, 0.05f, 0), new Vector3(0.62f, 0.78f, 1), jersey, 11, visuals.transform);
         Quad("Collar", ws, new Vector3(0f, 0.42f, 0), new Vector3(0.36f, 0.05f, 1), JerseyTrim, 12, visuals.transform);
         Quad("BeltLine", ws, new Vector3(0f, -0.30f, 0), new Vector3(0.62f, 0.06f, 1), JerseyTrim, 12, visuals.transform);
         Quad("FrontLeg", ws, new Vector3(0.15f, -0.55f, 0), new Vector3(0.26f, 0.55f, 1), ShortsDark, 12, visuals.transform);
         Quad("FrontShoe", ws, new Vector3(0.15f, -0.83f, 0), new Vector3(0.32f, 0.10f, 1), ShoeWhite, 12, visuals.transform);
-        Quad("FrontArm", ws, new Vector3(0.30f, 0.05f, 0), new Vector3(0.18f, 0.7f, 1), SkinTone, 13, visuals.transform);
-        Quad("FrontHand", ws, new Vector3(0.30f, -0.32f, 0), new Vector3(0.22f, 0.20f, 1), SkinTone, 13, visuals.transform);
+        Quad("FrontArm", ws, new Vector3(0.30f, 0.05f, 0), new Vector3(0.18f, 0.7f, 1), skin, 13, visuals.transform);
+        Quad("FrontHand", ws, new Vector3(0.30f, -0.32f, 0), new Vector3(0.22f, 0.20f, 1), skin, 13, visuals.transform);
 
         var head = new GameObject("Head");
         head.transform.SetParent(visuals.transform);
@@ -285,7 +487,7 @@ public static class CourtBuilder
         head.transform.localScale = new Vector3(0.50f, 0.50f, 1f);
         var headSr = head.AddComponent<SpriteRenderer>();
         headSr.sprite = circle;
-        headSr.color = SkinTone;
+        headSr.color = skin;
         headSr.sortingOrder = 14;
 
         var hair = new GameObject("Hair");
@@ -294,16 +496,16 @@ public static class CourtBuilder
         hair.transform.localScale = new Vector3(0.45f, 0.40f, 1f);
         var hairSr = hair.AddComponent<SpriteRenderer>();
         hairSr.sprite = circle;
-        hairSr.color = HairBlack;
+        hairSr.color = hairColor;
         hairSr.sortingOrder = 14;
 
-        Quad("Eye", ws, new Vector3(0.13f, 0.66f, 0), new Vector3(0.06f, 0.07f, 1), HairBlack, 15, visuals.transform);
-        Quad("Nose", ws, new Vector3(0.22f, 0.60f, 0), new Vector3(0.06f, 0.05f, 1), SkinTone, 15, visuals.transform);
-        Quad("Mouth", ws, new Vector3(0.13f, 0.52f, 0), new Vector3(0.07f, 0.02f, 1), HairBlack, 15, visuals.transform);
+        Quad("Eye", ws, new Vector3(0.13f, 0.66f, 0), new Vector3(0.06f, 0.07f, 1), hairColor, 15, visuals.transform);
+        Quad("Nose", ws, new Vector3(0.22f, 0.60f, 0), new Vector3(0.06f, 0.05f, 1), skin, 15, visuals.transform);
+        Quad("Mouth", ws, new Vector3(0.13f, 0.52f, 0), new Vector3(0.07f, 0.02f, 1), hairColor, 15, visuals.transform);
 
         var groundCheck = new GameObject("GroundCheck");
         groundCheck.transform.SetParent(player.transform);
-        groundCheck.transform.localPosition = new Vector3(0f, -0.88f, 0f);
+        groundCheck.transform.localPosition = new Vector3(0f, -0.88f * hScale, 0f);
 
         if (attachController)
         {
@@ -311,6 +513,65 @@ public static class CourtBuilder
             pc.groundCheck = groundCheck.transform;
         }
         return player;
+    }
+
+    // ---------- Block-letter helpers (sprite-based, no TMP, no gizmo) ----------
+    static GameObject BuildBlockLetter(Sprite ws, Transform parent, char letter, Vector3 localPos, Vector2 size, Color color, int sortingOrder)
+    {
+        var go = new GameObject($"Letter_{letter}");
+        go.transform.SetParent(parent);
+        go.transform.localPosition = localPos;
+        go.transform.localRotation = Quaternion.identity;
+        // localScale is the world size of the letter's bounding box ([-0.5, 0.5] x [-0.5, 0.5] unit square × size)
+        go.transform.localScale = new Vector3(size.x, size.y, 1f);
+
+        char key = char.ToUpper(letter);
+        if (!LetterShapes.TryGetValue(key, out var shapes)) return go;
+        for (int i = 0; i < shapes.Length; i++)
+        {
+            var s = shapes[i];
+            Quad($"part_{i}", ws, new Vector3(s.x, s.y, 0f), new Vector3(s.w, s.h, 1f), color, sortingOrder, go.transform);
+        }
+        return go;
+    }
+
+    static void BuildBlockText(Sprite ws, Transform parent, string text, Vector3 localPos, Vector2 letterSize, float letterSpacing, Color color, int sortingOrder)
+    {
+        var root = new GameObject($"Text_{text}");
+        root.transform.SetParent(parent);
+        root.transform.localPosition = localPos;
+        root.transform.localRotation = Quaternion.identity;
+        root.transform.localScale = Vector3.one;
+
+        int n = text.Length;
+        float spanWidth = (n - 1) * letterSpacing;
+        float startX = -spanWidth * 0.5f;
+        for (int i = 0; i < n; i++)
+        {
+            BuildBlockLetter(ws, root.transform, text[i], new Vector3(startX + i * letterSpacing, 0f, 0f), letterSize, color, sortingOrder);
+        }
+    }
+
+    // ---------- Jersey tier letter (large letter on chest) ----------
+    static void BuildJerseyLetter(Sprite ws, Transform playerRoot, char letter, Color textColor, float widthScale, float heightScale)
+    {
+        // Parented to the player ROOT (not Visuals) so the letter never mirrors when the AI changes facing.
+        // -z so it draws in front of body sprites; sortingOrder 12 sits above body (11), below front arm (13).
+        var go = BuildBlockLetter(ws, playerRoot, letter,
+            new Vector3(0f, 0.05f * heightScale, -0.01f),
+            new Vector2(0.45f * widthScale, 0.55f * heightScale),
+            textColor, 12);
+        go.name = "JerseyLetter";
+    }
+
+    // ---------- Floating name tag (block-letter, above the head) ----------
+    static void BuildNameTag(Sprite ws, Transform playerRoot, string displayName, float heightScale)
+    {
+        // Parented to player root so it never mirrors when facing flips. Y offset scales with character height.
+        BuildBlockText(ws, playerRoot, displayName.ToUpper(),
+            new Vector3(0f, 1.10f * heightScale, 0f),
+            new Vector2(0.22f, 0.28f), 0.28f,
+            Color.white, 50);
     }
 
     // ---------- Charge meter (world-space, above player) ----------

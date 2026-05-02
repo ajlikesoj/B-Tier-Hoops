@@ -31,6 +31,14 @@ public class GameManager : MonoBehaviour
     [Header("Player")]
     public Transform player;
     public Vector3 playerSpawnPosition = new Vector3(-3f, 0f, 0f);
+    [Tooltip("Display name for the human player in score and win text.")]
+    public string playerName = "PLAYER";
+
+    [Header("AI")]
+    public Transform ai;
+    public Vector3 aiSpawnPosition = new Vector3(3f, 0f, 0f);
+    [Tooltip("Display name for the AI in score and win text. Set by CourtBuilder from the AI's tier.")]
+    public string aiName = "CPU";
 
     [Header("Out-of-Bounds")]
     public float oobBelowY = -6f;
@@ -38,14 +46,21 @@ public class GameManager : MonoBehaviour
     public float oobSideX = 12.5f;
 
     public GameState State { get; private set; } = GameState.Playing;
+    public bool SuddenDeath { get; private set; }
+    public bool BallInPlay { get; private set; } = true;
+
     private float matchTimer;
     private float resetAtTime = -1f;
+
+    static readonly Color TimerNormalColor = Color.white;
+    static readonly Color TimerOvertimeColor = new Color(1f, 0.45f, 0.20f);
 
     void Awake()
     {
         Instance = this;
         matchTimer = matchDuration;
         State = GameState.Playing;
+        SuddenDeath = false;
         if (winPanel != null) winPanel.SetActive(false);
         UpdateScoreUI();
         UpdateTimerUI();
@@ -57,36 +72,74 @@ public class GameManager : MonoBehaviour
 
         if (State == GameState.Playing)
         {
-            matchTimer = Mathf.Max(0f, matchTimer - Time.deltaTime);
-            UpdateTimerUI();
+            // Tick down match timer only while play is live
+            if (BallInPlay && !SuddenDeath)
+            {
+                matchTimer = Mathf.Max(0f, matchTimer - Time.deltaTime);
+                UpdateTimerUI();
+            }
 
+            // R = manual emergency reset (also resumes play if paused)
             if (kb != null && kb.rKey.wasPressedThisFrame)
             {
-                ResetPlayer();
-                if (ball != null && !ball.IsHeld) ResetBall();
+                ResetEverything();
+                BallInPlay = true;
+                resetAtTime = -1f;
                 Debug.Log("[BTierHoops] Manual reset (R key).");
             }
 
+            // Free-ball OOB
             if (ball != null && !ball.IsHeld && IsOOB(ball.transform.position))
             {
                 Debug.Log($"[BTierHoops] Ball OOB at {ball.transform.position}, resetting.");
                 ResetBall();
             }
 
+            // Player OOB
             if (player != null && IsOOB(player.position))
             {
                 Debug.Log($"[BTierHoops] Player OOB at {player.position}, resetting.");
                 ResetPlayer();
             }
 
+            // AI OOB
+            if (ai != null && IsOOB(ai.position))
+            {
+                Debug.Log($"[BTierHoops] AI OOB at {ai.position}, resetting.");
+                ResetAI();
+            }
+
+            // Delayed full reset after a make / overtime entry
             if (resetAtTime > 0f && Time.time >= resetAtTime)
             {
-                ResetBall();
+                ResetEverything();
+                BallInPlay = true;
                 resetAtTime = -1f;
             }
 
-            if (matchTimer <= 0f || playerScore >= winScore || aiScore >= winScore)
+            // Win conditions
+            if (playerScore >= winScore || aiScore >= winScore)
+            {
                 EndMatch();
+                return;
+            }
+
+            // Timer expiry — only when play is live (don't expire during the post-score pause)
+            if (matchTimer <= 0f && !SuddenDeath && BallInPlay)
+            {
+                if (playerScore == aiScore)
+                {
+                    SuddenDeath = true;
+                    BallInPlay = false;
+                    resetAtTime = Time.time + resetDelay;
+                    UpdateTimerUI();
+                    Debug.Log("[BTierHoops] Time! Tied — entering sudden death (court resetting).");
+                }
+                else
+                {
+                    EndMatch();
+                }
+            }
         }
         else if (State == GameState.Ended)
         {
@@ -101,14 +154,25 @@ public class GameManager : MonoBehaviour
         if (hoopSide > 0) playerScore += points;
         else aiScore += points;
         UpdateScoreUI();
+        Debug.Log($"[BTierHoops] Score! +{points} → {playerName} {playerScore} - {aiName} {aiScore}");
+
+        // Pause the clock until the court resets and the ball drops again
+        BallInPlay = false;
+
+        // Sudden death: any non-tied score ends the match immediately
+        if (SuddenDeath && playerScore != aiScore)
+        {
+            EndMatch();
+            return;
+        }
+
         resetAtTime = Time.time + resetDelay;
-        Debug.Log($"[BTierHoops] Score! +{points} → Player {playerScore} - CPU {aiScore}");
     }
 
     public void ResetBall()
     {
         if (ball == null) return;
-        if (ball.IsHeld) return;
+        if (ball.IsHeld) ball.Release(Vector2.zero);
         var rb = ball.GetComponent<Rigidbody2D>();
         if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
         ball.transform.position = ballSpawnPosition;
@@ -123,12 +187,27 @@ public class GameManager : MonoBehaviour
         player.position = playerSpawnPosition;
     }
 
+    public void ResetAI()
+    {
+        if (ai == null) return;
+        var rb = ai.GetComponent<Rigidbody2D>();
+        if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
+        ai.position = aiSpawnPosition;
+    }
+
+    public void ResetEverything()
+    {
+        ResetBall();
+        ResetPlayer();
+        ResetAI();
+    }
+
     void EndMatch()
     {
         State = GameState.Ended;
         string winner;
-        if (playerScore > aiScore) winner = "PLAYER WINS!";
-        else if (aiScore > playerScore) winner = "CPU WINS!";
+        if (playerScore > aiScore) winner = string.IsNullOrEmpty(playerName) ? "PLAYER WINS!" : $"{playerName} WINS!";
+        else if (aiScore > playerScore) winner = $"{aiName} WINS!";
         else winner = "TIE GAME";
         if (winText != null) winText.text = winner;
         if (winPanel != null) winPanel.SetActive(true);
@@ -141,14 +220,12 @@ public class GameManager : MonoBehaviour
         aiScore = 0;
         matchTimer = matchDuration;
         State = GameState.Playing;
+        SuddenDeath = false;
+        BallInPlay = true;
+        resetAtTime = -1f;
         if (winPanel != null) winPanel.SetActive(false);
 
-        ResetPlayer();
-        if (ball != null)
-        {
-            if (ball.IsHeld) ball.Release(Vector2.zero);
-            ResetBall();
-        }
+        ResetEverything();
         UpdateScoreUI();
         UpdateTimerUI();
         Debug.Log("[BTierHoops] Match restarted.");
@@ -161,16 +238,25 @@ public class GameManager : MonoBehaviour
 
     void UpdateScoreUI()
     {
-        if (scoreText != null)
-            scoreText.text = $"PLAYER  {playerScore}   -   {aiScore}  CPU";
+        if (scoreText == null) return;
+        string left = string.IsNullOrEmpty(playerName) ? $"{playerScore}" : $"{playerName}  {playerScore}";
+        string right = string.IsNullOrEmpty(aiName) ? $"{aiScore}" : $"{aiScore}  {aiName}";
+        scoreText.text = $"{left}   -   {right}";
     }
 
     void UpdateTimerUI()
     {
         if (timerText == null) return;
+        if (SuddenDeath)
+        {
+            timerText.text = "NEXT POINT WINS";
+            timerText.color = TimerOvertimeColor;
+            return;
+        }
         int totalSec = Mathf.CeilToInt(matchTimer);
         int min = totalSec / 60;
         int sec = totalSec % 60;
         timerText.text = $"{min}:{sec:00}";
+        timerText.color = TimerNormalColor;
     }
 }
