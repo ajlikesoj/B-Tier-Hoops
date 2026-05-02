@@ -144,12 +144,13 @@ public class CharacterAnimationController : MonoBehaviour
         float drop = dribbleBallDrop * Mathf.Max(0.9f, heightScale);
         float speed = Mathf.Max(0.05f, dribbleCycleSpeed * Mathf.Clamp01(1f / Mathf.Max(0.5f, heightScale)));
 
-        // Determine holder collider bottom so the ball visibly bounces to the ground
+        // Determine holder collider bottom so the ball visibly bounces to the ground.
+        // Use the base Collider2D type so this works for both BoxCollider2D and CapsuleCollider2D.
         float groundLocalY = baseOffset.y; // fallback
-        var bodyCol = GetComponent<BoxCollider2D>();
+        var bodyCol = GetComponent<Collider2D>();
         if (bodyCol != null)
         {
-            float halfHeight = bodyCol.size.y * 0.5f;
+            float halfHeight = bodyCol.bounds.extents.y;
             // find ball radius if possible
             float ballRadius = 0.18f;
             if (ball != null)
