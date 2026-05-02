@@ -12,4 +12,5 @@ public class OpponentLearningProfile
     public float stealCooldownMultiplier = 1f;
     public float reactionDelayMultiplier = 1f;
     public string summary = "";
+    public string playerType = "";
 }

@@ -32,9 +32,18 @@ public class OpponentLearningService : MonoBehaviour
     Transform _lastAi;
 
     [Serializable]
-    class TelemetryBatch
+    class TelemetryPayload
     {
+        public string userId;
+        public string displayName;
         public TelemetrySample[] samples;
+    }
+
+    [Serializable]
+    class MatchPayload
+    {
+        public string userId;
+        public bool won;
     }
 
     [Serializable]
@@ -157,10 +166,16 @@ public class OpponentLearningService : MonoBehaviour
     {
         if (_buffer.Count == 0) yield break;
 
-        var batch = new TelemetryBatch { samples = _buffer.ToArray() };
+        MatchSettings.Load();
+        var payload = new TelemetryPayload
+        {
+            userId = MatchSettings.LearningUserId,
+            displayName = MatchSettings.PlayerName,
+            samples = _buffer.ToArray()
+        };
         _buffer.Clear();
 
-        string json = JsonUtility.ToJson(batch);
+        string json = JsonUtility.ToJson(payload);
         string url = baseUrl.TrimEnd('/') + "/telemetry";
 
         using (var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
@@ -190,7 +205,9 @@ public class OpponentLearningService : MonoBehaviour
 
     IEnumerator PullProfile()
     {
-        string url = baseUrl.TrimEnd('/') + "/profile";
+        MatchSettings.Load();
+        string uid = UnityWebRequest.EscapeURL(MatchSettings.LearningUserId);
+        string url = $"{baseUrl.TrimEnd('/')}/profile?userId={uid}";
         using (var req = UnityWebRequest.Get(url))
         {
             req.timeout = 4;
@@ -217,5 +234,36 @@ public class OpponentLearningService : MonoBehaviour
         var ai = _gm.ai.GetComponent<AIController>();
         if (ai == null) return;
         ai.SetOpponentLearningProfile(profile);
+    }
+
+    /// <summary>Report match outcome so the learning_service leaderboard can track W/L per user.</summary>
+    public void ReportMatchOutcome(bool playerWon)
+    {
+        if (!learningEnabled) return;
+        StartCoroutine(PostMatchOutcome(playerWon));
+    }
+
+    IEnumerator PostMatchOutcome(bool playerWon)
+    {
+        MatchSettings.Load();
+        if (string.IsNullOrEmpty(MatchSettings.LearningUserId)) yield break;
+
+        var body = new MatchPayload
+        {
+            userId = MatchSettings.LearningUserId,
+            won = playerWon
+        };
+        string json = JsonUtility.ToJson(body);
+        string url = baseUrl.TrimEnd('/') + "/match";
+
+        using (var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST))
+        {
+            byte[] raw = System.Text.Encoding.UTF8.GetBytes(json);
+            req.uploadHandler = new UploadHandlerRaw(raw);
+            req.downloadHandler = new DownloadHandlerBuffer();
+            req.SetRequestHeader("Content-Type", "application/json");
+            req.timeout = 4;
+            yield return req.SendWebRequest();
+        }
     }
 }

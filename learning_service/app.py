@@ -7,9 +7,15 @@ from typing import List
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
-from graph_flow import get_stored_profile, run_learning
+from graph_flow import (
+    get_stored_profile,
+    list_users,
+    record_match,
+    run_learning,
+    sanitize_user_id,
+)
 
-app = FastAPI(title="B-Tier Hoops opponent learning", version="1.0.0")
+app = FastAPI(title="B-Tier Hoops opponent learning", version="1.1.0")
 
 
 class TelemetrySample(BaseModel):
@@ -23,19 +29,38 @@ class TelemetrySample(BaseModel):
 
 
 class TelemetryIn(BaseModel):
+    userId: str = "guest"
+    displayName: str = ""
     samples: List[TelemetrySample]
+
+
+class MatchIn(BaseModel):
+    userId: str
+    won: bool
 
 
 @app.post("/telemetry")
 def ingest(body: TelemetryIn):
+    uid = sanitize_user_id(body.userId)
     payload = [s.model_dump() for s in body.samples]
-    profile = run_learning(payload)
+    profile = run_learning(payload, uid, body.displayName.strip())
     return {"ok": True, "profile": profile}
 
 
 @app.get("/profile")
-def profile():
-    return get_stored_profile()
+def profile(userId: str = "guest"):
+    return get_stored_profile(sanitize_user_id(userId))
+
+
+@app.get("/leaderboard")
+def leaderboard(limit: int = 25):
+    return {"entries": list_users(limit)}
+
+
+@app.post("/match")
+def match_result(body: MatchIn):
+    record_match(body.userId, body.won)
+    return {"ok": True}
 
 
 @app.get("/health")

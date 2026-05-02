@@ -5045,7 +5045,7 @@ Sprite:
         format: 0
         dimension: 0
       m_DataSize: 80
-      _typelessdata: 000000bf0000003f000000000000003f0000003f00000000000000bf000000bf000000000000003f000000bf000000000000000000000000000000000000000000000000000000000000000000000000
+      _typelessdata: 000000bf0000003f000000000000003f0000003f00000000000000bf000000bf000000000000003f000000bf00000000000000000000803f0000803f0000803f00000000000000000000803f00000000
     m_Bindpose: []
     textureRect:
       serializedVersion: 2
@@ -5136,7 +5136,7 @@ Sprite:
         format: 0
         dimension: 0
       m_DataSize: 80
-      _typelessdata: 000000bf0000003f000000000000003f0000003f00000000000000bf000000bf000000000000003f000000bf000000000000000000000000000000000000000000000000000000000000000000000000
+      _typelessdata: 000000bf0000003f000000000000003f0000003f00000000000000bf000000bf000000000000003f000000bf00000000000000000000803f0000803f0000803f00000000000000000000803f00000000
     m_Bindpose: []
     textureRect:
       serializedVersion: 2
@@ -9516,7 +9516,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -9850,7 +9850,7 @@ Sprite:
         format: 0
         dimension: 0
       m_DataSize: 152
-      _typelessdata: abaafa3e0000e03e000000000000003f000000bf000000000000003f5555d53e000000005555953e0000003f00000000abaababe0000003f00000000000000bf0000a03e00000000000000bf000000bf000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+      _typelessdata: abaafa3e0000e03e000000000000003f000000bf000000000000003f5555d53e000000005555953e0000003f00000000abaababe0000003f00000000000000bf0000a03e00000000000000bf000000bf0000000000000000000000000000000055557d3f0000703f0000803f000000000000803fabaa6a3fabaa4a3f0000803fabaa0a3e0000803f000000000000503f0000000000000000
     m_Bindpose: []
     textureRect:
       serializedVersion: 2
@@ -9941,7 +9941,7 @@ Sprite:
         format: 0
         dimension: 0
       m_DataSize: 152
-      _typelessdata: abaafa3e0000e03e000000000000003f000000bf000000000000003f5555d53e000000005555953e0000003f00000000abaababe0000003f00000000000000bf0000a03e00000000000000bf000000bf000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+      _typelessdata: abaafa3e0000e03e000000000000003f000000bf000000000000003f5555d53e000000005555953e0000003f00000000abaababe0000003f00000000000000bf0000a03e00000000000000bf000000bf0000000000000000000000000000000055557d3f0000703f0000803f000000000000803fabaa6a3fabaa4a3f0000803fabaa0a3e0000803f000000000000503f0000000000000000
     m_Bindpose: []
     textureRect:
       serializedVersion: 2
@@ -10713,7 +10713,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 100
@@ -11430,7 +11430,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -13307,6 +13307,21 @@ MonoBehaviour:
   oobBelowY: -6
   oobAboveY: 9
   oobSideX: 12.5
+--- !u!4 &1824708404
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1824708402}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1824708405
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13324,21 +13339,6 @@ MonoBehaviour:
   sampleInterval: 0.2
   pushInterval: 4
   pullInterval: 7
---- !u!4 &1824708404
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1824708402}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1831050424
 GameObject:
   m_ObjectHideFlags: 0

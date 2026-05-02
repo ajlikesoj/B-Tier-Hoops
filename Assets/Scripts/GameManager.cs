@@ -236,6 +236,10 @@ public class GameManager : MonoBehaviour
         if (winText != null) winText.text = winner + unlockBanner;
         if (winPanel != null) winPanel.SetActive(true);
         Debug.Log($"[BTierHoops] Match ended: {winner} ({playerScore}-{aiScore}){unlockBanner.Replace("\n", " ")}");
+
+        var learn = GetComponent<OpponentLearningService>();
+        if (learn == null) learn = FindFirstObjectByType<OpponentLearningService>();
+        if (learn != null) learn.ReportMatchOutcome(playerWon);
     }
 
     void RestartMatch()
