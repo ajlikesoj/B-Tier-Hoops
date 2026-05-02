@@ -370,6 +370,7 @@ public static class CourtBuilder
     {
         var go = new GameObject("GameManager");
         var gm = go.AddComponent<GameManager>();
+        go.AddComponent<OpponentLearningService>();
         gm.ball = ball;
         gm.ballSpawnPosition = new Vector3(0f, 1f, 0f);
         return gm;
