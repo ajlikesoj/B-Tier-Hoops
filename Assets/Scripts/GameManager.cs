@@ -31,14 +31,16 @@ public class GameManager : MonoBehaviour
     [Header("Player")]
     public Transform player;
     public Vector3 playerSpawnPosition = new Vector3(-3f, 0f, 0f);
-    [Tooltip("Display name for the human player in score and win text.")]
-    public string playerName = "PLAYER";
+    [Tooltip("Display name for the human player in score and win text. AISpawner overwrites this from MatchSettings at runtime.")]
+    public string playerName = "";
 
     [Header("AI")]
     public Transform ai;
     public Vector3 aiSpawnPosition = new Vector3(3f, 0f, 0f);
-    [Tooltip("Display name for the AI in score and win text. Set by CourtBuilder from the AI's tier.")]
-    public string aiName = "CPU";
+    [Tooltip("Display name for the AI in score and win text. Set by AISpawner from the AI's tier.")]
+    public string aiName = "";
+    [Tooltip("Tier the player is currently fighting. Set by AISpawner so we know which tier to mark defeated on a win.")]
+    public AIController.Tier currentMatchTier = AIController.Tier.F;
 
     [Header("Out-of-Bounds")]
     public float oobBelowY = -6f;
@@ -65,6 +67,9 @@ public class GameManager : MonoBehaviour
         UpdateScoreUI();
         UpdateTimerUI();
     }
+
+    /// <summary>Public hook for AISpawner to call after it sets aiName/playerName so the score banner reflects them.</summary>
+    public void RefreshScoreUI() => UpdateScoreUI();
 
     void Update()
     {
@@ -205,13 +210,32 @@ public class GameManager : MonoBehaviour
     void EndMatch()
     {
         State = GameState.Ended;
+        bool playerWon = playerScore > aiScore;
+        bool aiWon = aiScore > playerScore;
+
         string winner;
-        if (playerScore > aiScore) winner = string.IsNullOrEmpty(playerName) ? "PLAYER WINS!" : $"{playerName} WINS!";
-        else if (aiScore > playerScore) winner = $"{aiName} WINS!";
+        if (playerWon) winner = string.IsNullOrEmpty(playerName) ? "PLAYER WINS!" : $"{playerName} WINS!";
+        else if (aiWon) winner = $"{aiName} WINS!";
         else winner = "TIE GAME";
-        if (winText != null) winText.text = winner;
+
+        // Persist the result so the MainMenu can announce it on its next load
+        MatchSettings.RecordMatchResult(currentMatchTier, playerWon);
+
+        // Progress: defeating tier N unlocks the next harder tier (F → D → C → B → A → S)
+        string unlockBanner = "";
+        if (playerWon)
+        {
+            var next = MatchSettings.NextTierAfter(currentMatchTier);
+            if (next.HasValue && MatchSettings.UnlockTier(next.Value))
+            {
+                var nextName = AIController.GetTierData(next.Value).displayName;
+                unlockBanner = $"\n<size=60%>UNLOCKED {next.Value} — {nextName}</size>";
+            }
+        }
+
+        if (winText != null) winText.text = winner + unlockBanner;
         if (winPanel != null) winPanel.SetActive(true);
-        Debug.Log($"[BTierHoops] Match ended: {winner} ({playerScore}-{aiScore})");
+        Debug.Log($"[BTierHoops] Match ended: {winner} ({playerScore}-{aiScore}){unlockBanner.Replace("\n", " ")}");
     }
 
     void RestartMatch()
