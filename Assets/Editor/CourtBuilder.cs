@@ -18,10 +18,36 @@ public static class CourtBuilder
     static readonly Color RimOrange = new Color(0.96f, 0.42f, 0.05f);
     static readonly Color NetWhite = new Color(0.92f, 0.92f, 0.92f);
     static readonly Color PoleGray = new Color(0.28f, 0.28f, 0.30f);
-    static readonly Color BgDark = new Color(0.06f, 0.05f, 0.09f);
-    static readonly Color WallMid = new Color(0.14f, 0.10f, 0.16f);
-    static readonly Color CrowdDark = new Color(0.10f, 0.08f, 0.13f);
-    static readonly Color CrowdMid = new Color(0.20f, 0.15f, 0.22f);
+    static readonly Color BgDark = new Color(0.06f, 0.05f, 0.09f); // legacy — kept for camera fallback if anything still references it
+    // --- Daytime sky palette ---
+    static readonly Color SkyBlueTop = new Color(0.45f, 0.72f, 0.95f);
+    static readonly Color SkyBlueBottom = new Color(0.78f, 0.90f, 1.00f);
+    static readonly Color SunYellow = new Color(1.00f, 0.92f, 0.45f);
+    static readonly Color CloudWhite = new Color(1.00f, 1.00f, 1.00f, 0.95f);
+    static readonly Color GrassGreen = new Color(0.45f, 0.70f, 0.35f);
+    static readonly Color BleacherGray = new Color(0.55f, 0.55f, 0.60f);
+    static readonly Color BleacherDark = new Color(0.40f, 0.40f, 0.45f);
+
+    // Crowd member jersey palette — random pick per seat
+    static readonly Color[] CrowdShirtColors = new[] {
+        new Color(0.85f, 0.20f, 0.25f),  // red
+        new Color(0.20f, 0.50f, 0.90f),  // blue
+        new Color(0.30f, 0.75f, 0.35f),  // green
+        new Color(0.95f, 0.80f, 0.20f),  // yellow
+        new Color(0.80f, 0.40f, 0.85f),  // purple
+        new Color(0.95f, 0.55f, 0.20f),  // orange
+        new Color(0.25f, 0.75f, 0.80f),  // teal
+        new Color(0.95f, 0.55f, 0.65f),  // pink
+        new Color(0.50f, 0.30f, 0.20f),  // brown
+        new Color(0.20f, 0.20f, 0.25f),  // dark
+    };
+    static readonly Color[] CrowdSkinTones = new[] {
+        new Color(0.95f, 0.80f, 0.65f),
+        new Color(0.78f, 0.60f, 0.44f),
+        new Color(0.66f, 0.50f, 0.36f),
+        new Color(0.50f, 0.35f, 0.22f),
+        new Color(0.36f, 0.24f, 0.16f),
+    };
 
     // --- Jersey colors used at scene-build time ---
     public static readonly Color JerseyRed = new Color(0.86f, 0.16f, 0.16f);
@@ -164,19 +190,148 @@ public static class CourtBuilder
         EditorSceneManager.MarkSceneDirty(scene);
     }
 
-    // ---------- Background ----------
+    // ---------- Background (daytime sky + bleachers + crowd) ----------
     static void BuildBackground(Sprite ws)
     {
+        var circle = CharacterFactory.CircleSprite;
         var root = new GameObject("Background");
-        Quad("Sky", ws, new Vector3(0, 4, 5), new Vector3(40, 14, 1), BgDark, -20, root.transform);
-        Quad("Wall", ws, new Vector3(0, 1.2f, 4.5f), new Vector3(40, 9, 1), WallMid, -19, root.transform);
-        Quad("CrowdBack", ws, new Vector3(0, 0.5f, 4f), new Vector3(40, 3.6f, 1), CrowdDark, -18, root.transform);
-        Quad("CrowdFront", ws, new Vector3(0, -0.4f, 3.5f), new Vector3(40, 1.6f, 1), CrowdMid, -17, root.transform);
-        for (int i = -12; i <= 12; i++)
+
+        // ---- Sky: two stacked layers (deeper blue up top, lighter near horizon) ----
+        Quad("SkyTop",    ws, new Vector3(0,  6f, 5f), new Vector3(40f, 12f, 1f), SkyBlueTop,    -25, root.transform);
+        Quad("SkyBottom", ws, new Vector3(0, -2f, 5f), new Vector3(40f, 8f,  1f), SkyBlueBottom, -25, root.transform);
+
+        // ---- Sun ----
+        var sun = new GameObject("Sun");
+        sun.transform.SetParent(root.transform);
+        sun.transform.localPosition = new Vector3(8.5f, 4.5f, 4.8f);
+        sun.transform.localScale = new Vector3(1.5f, 1.5f, 1f);
+        var sunSr = sun.AddComponent<SpriteRenderer>();
+        sunSr.sprite = circle;
+        sunSr.color = SunYellow;
+        sunSr.sortingOrder = -24;
+        // Subtle glow ring
+        var glow = new GameObject("SunGlow");
+        glow.transform.SetParent(sun.transform);
+        glow.transform.localPosition = Vector3.zero;
+        glow.transform.localScale = new Vector3(1.6f, 1.6f, 1f);
+        var glowSr = glow.AddComponent<SpriteRenderer>();
+        glowSr.sprite = circle;
+        glowSr.color = new Color(SunYellow.r, SunYellow.g, SunYellow.b, 0.25f);
+        glowSr.sortingOrder = -25;
+
+        // ---- Clouds (a few puffy white blobs) ----
+        BuildCloud(circle, root.transform, new Vector3(-7f, 4.2f, 4.7f), 1.4f);
+        BuildCloud(circle, root.transform, new Vector3( 0f, 5.0f, 4.7f), 1.0f);
+        BuildCloud(circle, root.transform, new Vector3( 4f, 3.6f, 4.7f), 1.2f);
+        BuildCloud(circle, root.transform, new Vector3(-10f, 2.8f, 4.7f), 0.9f);
+
+        // ---- Distant grass strip behind the court (peeks above the floor) ----
+        Quad("GrassStrip", ws, new Vector3(0, -1.9f, 4.4f), new Vector3(40f, 0.6f, 1f), GrassGreen, -22, root.transform);
+
+        // ---- Bleachers: 4 stepped rows behind the court ----
+        // Each row is a long horizontal seat plank with a darker step under it.
+        var bleachers = new GameObject("Bleachers");
+        bleachers.transform.SetParent(root.transform);
+        const int bleacherRows = 4;
+        const float bleacherStartY = -0.6f;
+        const float bleacherSpacingY = 0.85f;
+        for (int r = 0; r < bleacherRows; r++)
         {
-            float x = i * 1.0f + 0.4f * Mathf.Sin(i * 1.7f);
-            Quad($"Head_{i}", ws, new Vector3(x, 0.35f, 3.4f), new Vector3(0.55f, 0.55f, 1), CrowdDark, -16, root.transform);
+            float y = bleacherStartY + r * bleacherSpacingY;
+            // Riser (darker, slightly behind)
+            Quad($"Riser_{r}", ws, new Vector3(0f, y - 0.1f, 4.3f), new Vector3(28f, 0.55f, 1f), BleacherDark, -21, bleachers.transform);
+            // Seat plank (lighter, in front)
+            Quad($"Seat_{r}", ws, new Vector3(0f, y + 0.2f, 4.2f), new Vector3(28f, 0.18f, 1f), BleacherGray, -20, bleachers.transform);
         }
+
+        // ---- Crowd: pre-build the maximum (~100 seats) across the bleacher rows.
+        // CrowdManager hides everything beyond the per-tier attendance count at runtime. ----
+        var crowdRoot = new GameObject("Crowd");
+        crowdRoot.transform.SetParent(root.transform);
+        var crowdManager = crowdRoot.AddComponent<CrowdManager>();
+        crowdManager.crowdMembers = new System.Collections.Generic.List<GameObject>();
+
+        // Seat fill order: front-row center outward, then row by row going back. This way
+        // sparse crowds (D, C) cluster front-and-center instead of looking randomly scattered.
+        const int seatsPerRow = 25;
+        var rng = new System.Random(1337); // deterministic so dev iteration is stable
+        for (int r = 0; r < bleacherRows; r++)
+        {
+            float baseY = bleacherStartY + r * bleacherSpacingY + 0.45f;     // sit on top of seat plank
+            float z = 4.0f - r * 0.05f;                                       // back rows slightly behind
+            // Center-outward x ordering: 0, +1, -1, +2, -2, …
+            for (int s = 0; s < seatsPerRow; s++)
+            {
+                int signedIdx = (s % 2 == 0) ? (s / 2) : -((s + 1) / 2);     // 0, -1, +1, -2, +2, …
+                float x = signedIdx * 0.95f + (float)(rng.NextDouble() - 0.5) * 0.12f;
+                float yJitter = (float)(rng.NextDouble() - 0.5) * 0.05f;
+                var member = BuildCrowdMember(circle, ws, crowdRoot.transform,
+                    new Vector3(x, baseY + yJitter, z),
+                    rng);
+                crowdManager.crowdMembers.Add(member);
+            }
+        }
+    }
+
+    static void BuildCloud(Sprite circle, Transform parent, Vector3 center, float scale)
+    {
+        var cloud = new GameObject("Cloud");
+        cloud.transform.SetParent(parent);
+        cloud.transform.localPosition = center;
+        cloud.transform.localScale = new Vector3(scale, scale, 1f);
+        // Three overlapping puffs make a cartoony cloud
+        AddCloudPuff(circle, cloud.transform, new Vector3(-0.8f, 0f, 0f),  1.0f);
+        AddCloudPuff(circle, cloud.transform, new Vector3( 0.0f, 0.2f, 0f), 1.3f);
+        AddCloudPuff(circle, cloud.transform, new Vector3( 0.8f, 0f, 0f),  1.0f);
+        AddCloudPuff(circle, cloud.transform, new Vector3(-0.3f,-0.2f, 0f), 0.9f);
+        AddCloudPuff(circle, cloud.transform, new Vector3( 0.3f,-0.2f, 0f), 0.9f);
+    }
+
+    static void AddCloudPuff(Sprite circle, Transform parent, Vector3 localPos, float scale)
+    {
+        var go = new GameObject("Puff");
+        go.transform.SetParent(parent);
+        go.transform.localPosition = localPos;
+        go.transform.localScale = new Vector3(scale, scale * 0.85f, 1f);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = circle;
+        sr.color = CloudWhite;
+        sr.sortingOrder = -23;
+    }
+
+    static GameObject BuildCrowdMember(Sprite circle, Sprite ws, Transform parent, Vector3 worldPos, System.Random rng)
+    {
+        var member = new GameObject("CrowdMember");
+        member.transform.SetParent(parent);
+        member.transform.localPosition = worldPos;
+        member.transform.localScale = Vector3.one;
+
+        Color shirt = CrowdShirtColors[rng.Next(CrowdShirtColors.Length)];
+        Color skin = CrowdSkinTones[rng.Next(CrowdSkinTones.Length)];
+        Color hair = new Color(0.10f, 0.07f, 0.05f);
+
+        // Body (rectangle)
+        Quad("Body", ws, new Vector3(0f, 0f, 0f), new Vector3(0.30f, 0.32f, 1f), shirt, -18, member.transform);
+        // Head (small circle on top of body)
+        var head = new GameObject("Head");
+        head.transform.SetParent(member.transform);
+        head.transform.localPosition = new Vector3(0f, 0.24f, 0f);
+        head.transform.localScale = new Vector3(0.22f, 0.22f, 1f);
+        var headSr = head.AddComponent<SpriteRenderer>();
+        headSr.sprite = circle;
+        headSr.color = skin;
+        headSr.sortingOrder = -17;
+        // Hair cap (slightly behind head, darker)
+        var hairCap = new GameObject("Hair");
+        hairCap.transform.SetParent(member.transform);
+        hairCap.transform.localPosition = new Vector3(0f, 0.30f, 0f);
+        hairCap.transform.localScale = new Vector3(0.20f, 0.14f, 1f);
+        var hairSr = hairCap.AddComponent<SpriteRenderer>();
+        hairSr.sprite = circle;
+        hairSr.color = hair;
+        hairSr.sortingOrder = -17;
+
+        return member;
     }
 
     // ---------- Floor + court markings ----------
@@ -477,6 +632,6 @@ public static class CourtBuilder
         cam.orthographic = true;
         cam.orthographicSize = 6.2f;
         cam.transform.position = new Vector3(0f, 0f, -10f);
-        cam.backgroundColor = BgDark;
+        cam.backgroundColor = SkyBlueTop;
     }
 }
