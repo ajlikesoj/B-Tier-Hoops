@@ -5,8 +5,8 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
-    public float moveSpeed = 6f;
-    public float jumpForce = 15f;
+    public float moveSpeed = 5f;     // dialed down from 6 — player was overpowered
+    public float jumpForce = 12f;    // dialed down from 15 — peak reach now ~2.44 vs rim 2.10, dunks need tighter timing
     [Range(0f, 1f)] public float shortHopMultiplier = 0.4f;
 
     [Header("Ground Check")]

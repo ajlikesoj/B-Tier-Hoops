@@ -263,8 +263,11 @@ public static class CharacterFactory
         rb.linearDamping = 0f;
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
-        var col = player.AddComponent<BoxCollider2D>();
+        // Capsule collider — rounded top means balls can't balance on the head (the old BoxCollider2D
+        // gave a flat surface where the ball would stably rest, requiring physics dislodge tricks).
+        var col = player.AddComponent<CapsuleCollider2D>();
         col.size = new Vector2(0.85f * wScale, 1.7f * hScale);
+        col.direction = CapsuleDirection2D.Vertical;
         col.offset = Vector2.zero;
 
         var visuals = new GameObject("Visuals");
