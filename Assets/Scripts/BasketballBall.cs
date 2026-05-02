@@ -69,7 +69,14 @@ public class BasketballBall : MonoBehaviour
         if (holder == null) return;
         var visuals = holder.Find("Visuals");
         float facing = (visuals != null && visuals.localScale.x < 0f) ? -1f : 1f;
-        Vector3 offset = new Vector3(holdOffset.x * facing, holdOffset.y, -0.02f);
+        Vector2 localOffset = new Vector2(holdOffset.x, holdOffset.y);
+        var anim = holder.GetComponent<CharacterAnimationController>();
+        if (anim != null)
+            localOffset = anim.GetBallHoldOffset(localOffset, facing);
+        else
+            localOffset.x *= facing;
+
+        Vector3 offset = new Vector3(localOffset.x, localOffset.y, -0.02f);
         transform.position = holder.position + offset;
     }
 }
