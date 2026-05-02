@@ -13266,6 +13266,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1824708404}
   - component: {fileID: 1824708403}
+  - component: {fileID: 1824708405}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -13306,6 +13307,23 @@ MonoBehaviour:
   oobBelowY: -6
   oobAboveY: 9
   oobSideX: 12.5
+--- !u!114 &1824708405
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1824708402}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d6b9e2f0c3a4789d01e2f3a4b5c6d7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OpponentLearningService
+  baseUrl: http://127.0.0.1:8765
+  learningEnabled: 1
+  sampleInterval: 0.2
+  pushInterval: 4
+  pullInterval: 7
 --- !u!4 &1824708404
 Transform:
   m_ObjectHideFlags: 0

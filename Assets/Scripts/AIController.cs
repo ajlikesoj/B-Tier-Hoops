@@ -276,6 +276,12 @@ public class AIController : MonoBehaviour
     [Header("State (read-only)")]
     public State currentState = State.Idle;
 
+    [Header("Opponent learning")]
+    [Tooltip("When true, defensive stats are blended toward the LangGraph profile from learning_service.")]
+    public bool useOpponentLearning = true;
+    [Tooltip("0 = tier only, 1 = fully apply learned multipliers.")]
+    [Range(0f, 1f)] public float opponentLearningBlend = 0.45f;
+
     private Rigidbody2D rb;
     private BoxCollider2D bodyCollider;
     private float nextDecisionTime;
@@ -292,6 +298,13 @@ public class AIController : MonoBehaviour
     private bool dunkAttemptThisPossession = false;
     private float dunkJumpTime = -1f;
     private Transform prevBallHolder = null;
+
+    private float _baseReactionDelay;
+    private float _baseDefenseStandoff;
+    private float _baseDefenseSpeedMultiplier;
+    private float _baseJumpBlockChance;
+    private float _baseStealCooldown;
+    private OpponentLearningProfile _opponentLearning;
 
     void Awake()
     {
@@ -326,6 +339,40 @@ public class AIController : MonoBehaviour
         jumpBlockChance = d.jumpBlockChance;
         canDunk = d.canDunk;
         dunkAttemptChance = d.dunkAttemptChance;
+
+        _baseReactionDelay = reactionDelay;
+        _baseDefenseStandoff = defenseStandoff;
+        _baseDefenseSpeedMultiplier = defenseSpeedMultiplier;
+        _baseJumpBlockChance = jumpBlockChance;
+        _baseStealCooldown = stealAttemptCooldown;
+        ApplyOpponentLearningOverlay();
+    }
+
+    /// <summary>Called by <see cref="OpponentLearningService"/> when the Python graph returns a new profile.</summary>
+    public void SetOpponentLearningProfile(OpponentLearningProfile profile)
+    {
+        _opponentLearning = profile;
+        ApplyOpponentLearningOverlay();
+    }
+
+    void ApplyOpponentLearningOverlay()
+    {
+        if (!useOpponentLearning || _opponentLearning == null)
+        {
+            reactionDelay = _baseReactionDelay;
+            defenseStandoff = _baseDefenseStandoff;
+            defenseSpeedMultiplier = _baseDefenseSpeedMultiplier;
+            jumpBlockChance = _baseJumpBlockChance;
+            stealAttemptCooldown = _baseStealCooldown;
+            return;
+        }
+
+        float b = opponentLearningBlend;
+        reactionDelay = _baseReactionDelay * Mathf.Lerp(1f, _opponentLearning.reactionDelayMultiplier, b);
+        defenseStandoff = _baseDefenseStandoff * Mathf.Lerp(1f, _opponentLearning.defenseStandoffMultiplier, b);
+        defenseSpeedMultiplier = _baseDefenseSpeedMultiplier * Mathf.Lerp(1f, _opponentLearning.defenseSpeedMultiplier, b);
+        jumpBlockChance = Mathf.Clamp01(_baseJumpBlockChance + _opponentLearning.jumpBlockBonus * b);
+        stealAttemptCooldown = _baseStealCooldown * Mathf.Lerp(1f, _opponentLearning.stealCooldownMultiplier, b);
     }
 
     void Update()
