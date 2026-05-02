@@ -277,7 +277,7 @@ public class AIController : MonoBehaviour
     public State currentState = State.Idle;
 
     private Rigidbody2D rb;
-    private BoxCollider2D bodyCollider;
+    private Collider2D bodyCollider;  // body shape (Capsule in current builds, but Collider2D base lets old Box-based scenes still work)
     private float nextDecisionTime;
     private float shotWindupStart = -1f;
     private float lastStealAttemptTime = -999f;
@@ -296,7 +296,7 @@ public class AIController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-        bodyCollider = GetComponent<BoxCollider2D>();
+        bodyCollider = GetComponent<Collider2D>();
         if (targetHoop != null)
         {
             var hoop = targetHoop.GetComponent<Hoop>();
@@ -411,8 +411,8 @@ public class AIController : MonoBehaviour
 
         // "On head/shoulders" = ball above the AI's center by at least 0.6, and within roughly the body's
         // horizontal footprint (collider half-width plus the ball's radius). This covers all tiers
-        // automatically since BoxCollider2D.size is set per-tier in CourtBuilder from the tier's widthScale.
-        float halfWidth = bodyCollider != null ? bodyCollider.size.x * 0.5f : 0.43f;
+        // automatically since the body collider's bounds reflect the per-tier width scale set in CharacterFactory.
+        float halfWidth = bodyCollider != null ? bodyCollider.bounds.extents.x : 0.43f;
         bool onHead = dy > 0.6f && dx < halfWidth + 0.25f;
 
         if (!onHead)
@@ -520,15 +520,11 @@ public class AIController : MonoBehaviour
             rb.linearVelocity = new Vector2(dirToHoop * moveSpeed, rb.linearVelocity.y);
             shotWindupStart = -1f;
         }
-        else if (distFromHoop < optimalShotDistance - optimalDistanceTolerance)
-        {
-            // Too close — back off
-            rb.linearVelocity = new Vector2(-dirToHoop * moveSpeed * 0.7f, rb.linearVelocity.y);
-            shotWindupStart = -1f;
-        }
         else
         {
-            // Sweet spot — wind up and shoot
+            // Optimal range or closer — stop and shoot. (Used to back off when too close, but that
+            // looked like the AI was running away from the hoop; now they always commit to a shot.
+            // Ball-handlers that ended up too close take their chances on the rim instead.)
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             if (shotWindupStart < 0f) shotWindupStart = Time.time;
             if (Time.time - shotWindupStart >= shotWindupTime)
