@@ -10,6 +10,12 @@ public class Hoop : MonoBehaviour
 
     private float lastScoreTime = -999f;
     private const float ScoreCooldown = 0.3f;
+    private HoopNetAnimator netAnimator;
+
+    void Awake()
+    {
+        netAnimator = GetComponentInParent<HoopNetAnimator>();
+    }
 
     void OnTriggerEnter2D(Collider2D other)
     {
@@ -21,6 +27,9 @@ public class Hoop : MonoBehaviour
         var rb = ball.GetComponent<Rigidbody2D>();
         if (rb == null) return;
         if (rb.linearVelocity.y > -minDownwardSpeed) return;
+
+        if (netAnimator != null)
+            netAnimator.TriggerSwish(rb.linearVelocity);
 
         lastScoreTime = Time.time;
         if (GameManager.Instance != null)

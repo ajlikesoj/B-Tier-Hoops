@@ -288,6 +288,7 @@ public class AIController : MonoBehaviour
     private bool prevPlayerCharging = false;
     private float lastBlockJumpTime = -999f;
     private ShootingController opponentShooter;
+    private CharacterAnimationController anim;
     private bool dunkAttemptThisPossession = false;
     private float dunkJumpTime = -1f;
     private Transform prevBallHolder = null;
@@ -297,6 +298,7 @@ public class AIController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
         bodyCollider = GetComponent<Collider2D>();
+        anim = GetComponent<CharacterAnimationController>();
         if (targetHoop != null)
         {
             var hoop = targetHoop.GetComponent<Hoop>();
@@ -391,6 +393,7 @@ public class AIController : MonoBehaviour
         if (Random.value > jumpBlockChance) return;
 
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, blockJumpForce);
+        if (anim != null) anim.TriggerJump();
         lastBlockJumpTime = Time.time;
         Debug.Log($"[BTierHoops] {aiName} jumps to block!");
     }
@@ -459,6 +462,7 @@ public class AIController : MonoBehaviour
         if (Time.time - lastStealAttemptTime < stealAttemptCooldown) return;
         if (Vector2.Distance(GetArmPosition(), ball.transform.position) > armReachRadius) return;
 
+        if (anim != null) anim.TriggerSteal();
         ball.Steal(transform);
         lastStealAttemptTime = Time.time;
         Debug.Log("[BTierHoops] AI stole the ball.");
@@ -519,6 +523,7 @@ public class AIController : MonoBehaviour
             // Drive toward hoop
             rb.linearVelocity = new Vector2(dirToHoop * moveSpeed, rb.linearVelocity.y);
             shotWindupStart = -1f;
+            if (anim != null) anim.SetCharge(0f);
         }
         else
         {
@@ -527,10 +532,16 @@ public class AIController : MonoBehaviour
             // Ball-handlers that ended up too close take their chances on the rim instead.)
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             if (shotWindupStart < 0f) shotWindupStart = Time.time;
+            if (anim != null)
+            {
+                float windupProgress = Mathf.Clamp01((Time.time - shotWindupStart) / Mathf.Max(0.01f, shotWindupTime));
+                anim.SetCharge(windupProgress);
+            }
             if (Time.time - shotWindupStart >= shotWindupTime)
             {
                 Shoot();
                 shotWindupStart = -1f;
+                if (anim != null) anim.SetCharge(0f);
             }
         }
     }
@@ -598,7 +609,11 @@ public class AIController : MonoBehaviour
     void Shoot()
     {
         if (!ball.IsHeld || ball.holder != transform) return;
-        if (TryDunk()) return;
+        if (TryDunk())
+        {
+            if (anim != null) anim.TriggerDunk();
+            return;
+        }
 
         // No shot cancellation — physics handles bad-position shots via the under-rim barrier.
 
@@ -615,6 +630,7 @@ public class AIController : MonoBehaviour
         Vector2 error = (Vector2)Random.insideUnitCircle * errorMag;
 
         ball.Release(baseVel + error);
+        if (anim != null) anim.TriggerShoot(1f);
     }
 
     bool TryDunk()
@@ -626,8 +642,8 @@ public class AIController : MonoBehaviour
         if (transform.position.y + dunkReachHeight < targetHoop.position.y) return false;
 
         ball.lastShotPoints = 2;
-        ball.Release(new Vector2(0f, -10f));
-        ball.transform.position = (Vector3)targetHoop.position + new Vector3(0f, 0.30f, 0f);
+        ball.Release(new Vector2(0f, -12f));
+        ball.transform.position = (Vector3)targetHoop.position + new Vector3(0f, 0.42f, 0f);
         Debug.Log($"[BTierHoops] DUNK by {aiName}!");
         return true;
     }

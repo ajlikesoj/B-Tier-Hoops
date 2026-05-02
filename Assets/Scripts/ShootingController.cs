@@ -44,10 +44,12 @@ public class ShootingController : MonoBehaviour
     public bool isCharging;
 
     private PlayerController playerCtrl;
+    private CharacterAnimationController anim;
 
     void Awake()
     {
         playerCtrl = GetComponent<PlayerController>();
+        anim = GetComponent<CharacterAnimationController>();
         if (targetHoop != null)
         {
             var hoop = targetHoop.GetComponent<Hoop>();
@@ -67,6 +69,7 @@ public class ShootingController : MonoBehaviour
         {
             isCharging = false;
             currentCharge = 0f;
+            if (anim != null) anim.SetCharge(0f);
             return;
         }
 
@@ -78,11 +81,13 @@ public class ShootingController : MonoBehaviour
         {
             isCharging = true;
             currentCharge = 0f;
+            if (anim != null) anim.SetCharge(0f);
         }
 
         if (isCharging && fHeld)
         {
             currentCharge = Mathf.Clamp01(currentCharge + Time.deltaTime / chargeTime);
+            if (anim != null) anim.SetCharge(currentCharge);
         }
 
         if (fUp && isCharging)
@@ -90,6 +95,7 @@ public class ShootingController : MonoBehaviour
             Shoot();
             isCharging = false;
             currentCharge = 0f;
+            if (anim != null) anim.SetCharge(0f);
         }
     }
 
@@ -107,7 +113,11 @@ public class ShootingController : MonoBehaviour
 
     void Shoot()
     {
-        if (TryDunk()) return;
+        if (TryDunk())
+        {
+            if (anim != null) anim.TriggerDunk();
+            return;
+        }
 
         // No shot cancellation — the under-rim one-way barrier physically blocks balls fired from
         // beneath the rim, so the ball bounces off the underside instead of scoring.
@@ -128,6 +138,7 @@ public class ShootingController : MonoBehaviour
         ball.lastShotPoints = fromOwnHalf ? 3 : 2;
 
         ball.Release(finalVel);
+        if (anim != null) anim.TriggerShoot(currentCharge);
     }
 
     bool TryDunk()
@@ -150,10 +161,10 @@ public class ShootingController : MonoBehaviour
         var rb = GetComponent<Rigidbody2D>();
         if (rb != null) rb.linearVelocity = new Vector2(rb.linearVelocity.x, dunkHopImpulse);
 
-        // Drop the ball straight through the rim — fast enough to satisfy Hoop.minDownwardSpeed
+        // Two-hand throwdown visual: spawn the ball clearly above the rim center, then hammer it down.
         ball.lastShotPoints = 2;
-        ball.Release(new Vector2(0f, -dunkBallSpeed));
-        ball.transform.position = (Vector3)targetHoop.position + new Vector3(0f, 0.30f, 0f);
+        ball.Release(new Vector2(0f, -Mathf.Max(12f, dunkBallSpeed)));
+        ball.transform.position = (Vector3)targetHoop.position + new Vector3(0f, 0.42f, 0f);
         Debug.Log("[BTierHoops] DUNK by player!");
     }
 
