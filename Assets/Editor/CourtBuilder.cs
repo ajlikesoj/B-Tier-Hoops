@@ -358,6 +358,7 @@ public static class CourtBuilder
     {
         string suffix = side > 0 ? "Right" : "Left";
         var root = new GameObject($"Hoop_{suffix}");
+        root.AddComponent<HoopNetAnimator>();
 
         Quad("Pole", ws, new Vector3(hoopX + 1.2f * side, 0.5f, 0), new Vector3(0.22f, 6.5f, 1), PoleGray, 1, root.transform);
         Quad("PoleBase", ws, new Vector3(hoopX + 1.2f * side, -2.3f, 0), new Vector3(0.7f, 0.25f, 1), PoleGray, 2, root.transform);
@@ -481,6 +482,22 @@ public static class CourtBuilder
         Quad("FrontArm", ws, new Vector3(0.30f, 0.05f, 0), new Vector3(0.18f, 0.7f, 1), skin, 13, visuals.transform);
         Quad("FrontHand", ws, new Vector3(0.30f, -0.32f, 0), new Vector3(0.22f, 0.20f, 1), skin, 13, visuals.transform);
 
+        // Reparent hands under their matching arms so they inherit arm rotation naturally.
+        var backArm = visuals.transform.Find("BackArm");
+        var backHand = visuals.transform.Find("BackHand");
+        var frontArm = visuals.transform.Find("FrontArm");
+        var frontHand = visuals.transform.Find("FrontHand");
+        if (backArm != null && backHand != null)
+        {
+            backHand.SetParent(backArm, true);
+            backHand.localPosition = new Vector3(0.02f, -0.36f, 0f);
+        }
+        if (frontArm != null && frontHand != null)
+        {
+            frontHand.SetParent(frontArm, true);
+            frontHand.localPosition = new Vector3(0.02f, -0.37f, 0f);
+        }
+
         var head = new GameObject("Head");
         head.transform.SetParent(visuals.transform);
         head.transform.localPosition = new Vector3(0.05f, 0.65f, 0);
@@ -506,6 +523,8 @@ public static class CourtBuilder
         var groundCheck = new GameObject("GroundCheck");
         groundCheck.transform.SetParent(player.transform);
         groundCheck.transform.localPosition = new Vector3(0f, -0.88f * hScale, 0f);
+
+        player.AddComponent<CharacterAnimationController>();
 
         if (attachController)
         {
