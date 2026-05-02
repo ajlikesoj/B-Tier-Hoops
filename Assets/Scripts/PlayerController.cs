@@ -21,6 +21,15 @@ public class PlayerController : MonoBehaviour
     [Tooltip("Ball must be within this radius of the arm point to be stolen.")]
     public float armReachRadius = 0.5f;
 
+    [Header("Sfx")]
+    [Tooltip("Clip to play when the player changes walking direction.")]
+    public AudioClip squeakClip;
+    [Tooltip("Minimum seconds between squeaks.")]
+    public float squeakCooldown = 0.12f;
+    float _lastSqueakTime = -999f;
+    int _prevFacingSign = 1;
+    AudioSource _squeakSource;
+
     private Rigidbody2D rb;
     private CharacterAnimationController anim;
     private bool isGrounded;
@@ -32,6 +41,14 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<CharacterAnimationController>();
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+        // initialize previous facing from Visuals localScale if present
+        var v = transform.Find("Visuals");
+        if (v != null) _prevFacingSign = v.localScale.x < 0f ? -1 : 1;
+        // prepare an AudioSource for squeaks (2D sound)
+        _squeakSource = GetComponent<AudioSource>();
+        if (_squeakSource == null) _squeakSource = gameObject.AddComponent<AudioSource>();
+        _squeakSource.playOnAwake = false;
+        _squeakSource.spatialBlend = 0f; // 2D
     }
 
     void Update()
@@ -64,7 +81,22 @@ public class PlayerController : MonoBehaviour
         // Q = steal (must be touching opponent who is holding the ball)
         if (kb.qKey.wasPressedThisFrame) TryStealFromOpponent();
 
-        // Sprite facing
+        // Sprite facing and squeak on direction change (inferred from keys pressed)
+        int currentSign = horizontal > 0.01f ? 1 : (horizontal < -0.01f ? -1 : 0);
+        if (currentSign != 0 && currentSign != _prevFacingSign)
+        {
+            // play squeak when changing direction
+            if (squeakClip != null && Time.time - _lastSqueakTime >= squeakCooldown)
+            {
+                if (_squeakSource != null)
+                    _squeakSource.PlayOneShot(squeakClip);
+                else
+                    AudioSource.PlayClipAtPoint(squeakClip, transform.position);
+                _lastSqueakTime = Time.time;
+            }
+            _prevFacingSign = currentSign;
+        }
+
         if (Mathf.Abs(horizontal) > 0.01f)
         {
             var v = transform.Find("Visuals");
