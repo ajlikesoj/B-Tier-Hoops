@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour
     public float armReachRadius = 0.5f;
 
     private Rigidbody2D rb;
+    private CharacterAnimationController anim;
     private bool isGrounded;
     public bool IsGrounded => isGrounded;
     private readonly Collider2D[] groundHits = new Collider2D[4];
@@ -29,6 +30,7 @@ public class PlayerController : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<CharacterAnimationController>();
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
     }
 
@@ -51,6 +53,7 @@ public class PlayerController : MonoBehaviour
         if (isGrounded && jumpPressed)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            if (anim != null) anim.TriggerJump();
         }
 
         if (jumpReleased && rb.linearVelocity.y > 0f)
@@ -76,6 +79,7 @@ public class PlayerController : MonoBehaviour
 
     void TryStealFromOpponent()
     {
+        if (anim != null) anim.TriggerSteal();
         if (ball == null || !ball.IsHeld) return;
         if (ball.holder == transform) return;
         if (opponent == null || ball.holder != opponent) return;
