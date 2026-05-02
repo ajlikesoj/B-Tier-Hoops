@@ -6,15 +6,24 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 6f;
-    public float jumpForce = 12f;
+    public float jumpForce = 15f;
     [Range(0f, 1f)] public float shortHopMultiplier = 0.4f;
 
     [Header("Ground Check")]
     public Transform groundCheck;
     public float groundCheckRadius = 0.18f;
 
+    [Header("Steal")]
+    public Transform opponent;
+    public BasketballBall ball;
+    [Tooltip("Local offset from player position to the 'arm/hand' point used for steal contact. X is mirrored by facing.")]
+    public Vector2 armReachOffset = new Vector2(0.55f, 0.2f);
+    [Tooltip("Ball must be within this radius of the arm point to be stolen.")]
+    public float armReachRadius = 0.5f;
+
     private Rigidbody2D rb;
     private bool isGrounded;
+    public bool IsGrounded => isGrounded;
     private readonly Collider2D[] groundHits = new Collider2D[4];
 
     void Awake()
@@ -49,6 +58,9 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * shortHopMultiplier);
         }
 
+        // Q = steal (must be touching opponent who is holding the ball)
+        if (kb.qKey.wasPressedThisFrame) TryStealFromOpponent();
+
         // Sprite facing
         if (Mathf.Abs(horizontal) > 0.01f)
         {
@@ -60,6 +72,24 @@ public class PlayerController : MonoBehaviour
                 v.localScale = s;
             }
         }
+    }
+
+    void TryStealFromOpponent()
+    {
+        if (ball == null || !ball.IsHeld) return;
+        if (ball.holder == transform) return;
+        if (opponent == null || ball.holder != opponent) return;
+        if (Vector2.Distance(GetArmPosition(), ball.transform.position) > armReachRadius) return;
+
+        ball.Steal(transform);
+        Debug.Log("[BTierHoops] Player stole the ball.");
+    }
+
+    Vector2 GetArmPosition()
+    {
+        var visuals = transform.Find("Visuals");
+        float facing = (visuals != null && visuals.localScale.x < 0f) ? -1f : 1f;
+        return (Vector2)transform.position + new Vector2(armReachOffset.x * facing, armReachOffset.y);
     }
 
     void UpdateGrounded()
@@ -80,8 +110,16 @@ public class PlayerController : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        if (groundCheck == null) return;
-        Gizmos.color = isGrounded ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        if (groundCheck != null)
+        {
+            Gizmos.color = isGrounded ? Color.green : Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
+
+        Gizmos.color = Color.cyan;
+        var visuals = transform.Find("Visuals");
+        float facing = (Application.isPlaying && visuals != null && visuals.localScale.x < 0f) ? -1f : 1f;
+        Vector3 arm = transform.position + new Vector3(armReachOffset.x * facing, armReachOffset.y, 0f);
+        Gizmos.DrawWireSphere(arm, armReachRadius);
     }
 }

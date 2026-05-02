@@ -41,7 +41,28 @@ public class BasketballBall : MonoBehaviour
         lastReleasedTime = Time.time;
     }
 
-    public bool CanBePickedUp() => !IsHeld && Time.time - lastReleasedTime > pickupCooldown;
+    /// <summary>Transfer possession instantly without re-enabling physics. Caller must already hold the ball before this is taken.</summary>
+    public void Steal(Transform newHolder)
+    {
+        if (newHolder == null) return;
+        holder = newHolder;
+        rb.linearVelocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        col.enabled = false;
+        lastReleasedTime = -999f;
+    }
+
+    public bool CanBePickedUp()
+    {
+        if (IsHeld) return false;
+        if (Time.time - lastReleasedTime <= pickupCooldown) return false;
+        // Block all pickups between a make and the scheduled court reset — otherwise an AI standing
+        // by the rim after a dunk grabs the ball back inside the 1s reset window and dunks again,
+        // pushing resetAtTime further out each time and locking the game into a scoring loop.
+        if (GameManager.Instance != null && !GameManager.Instance.BallInPlay) return false;
+        return true;
+    }
 
     void LateUpdate()
     {
