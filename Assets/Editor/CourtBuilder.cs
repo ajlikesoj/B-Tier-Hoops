@@ -258,6 +258,7 @@ public static class CourtBuilder
     {
         string suffix = side > 0 ? "Right" : "Left";
         var root = new GameObject($"Hoop_{suffix}");
+        root.AddComponent<HoopNetAnimator>();
 
         Quad("Pole", ws, new Vector3(hoopX + 1.2f * side, 0.5f, 0), new Vector3(0.22f, 6.5f, 1), PoleGray, 1, root.transform);
         Quad("PoleBase", ws, new Vector3(hoopX + 1.2f * side, -2.3f, 0), new Vector3(0.7f, 0.25f, 1), PoleGray, 2, root.transform);

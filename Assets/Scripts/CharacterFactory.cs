@@ -314,6 +314,8 @@ public static class CharacterFactory
         groundCheck.transform.SetParent(player.transform);
         groundCheck.transform.localPosition = new Vector3(0f, -0.88f * hScale, 0f);
 
+        player.AddComponent<CharacterAnimationController>();
+
         if (attachPlayerController)
         {
             var pc = player.AddComponent<PlayerController>();
