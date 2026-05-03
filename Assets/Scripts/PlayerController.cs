@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 [RequireComponent(typeof(Rigidbody2D))]
 public class PlayerController : MonoBehaviour
 {
@@ -28,7 +32,33 @@ public class PlayerController : MonoBehaviour
     public float squeakCooldown = 0.12f;
     float _lastSqueakTime = -999f;
     int _prevFacingSign = 1;
-    AudioSource _squeakSource;
+
+    #if UNITY_EDITOR
+    void OnValidate()
+    {
+        // Auto-assign squeak clip in editor if not set
+        if (squeakClip == null)
+        {
+            string[] results = AssetDatabase.FindAssets("squeak t:AudioClip");
+            if (results.Length > 0)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(results[0]);
+                squeakClip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            }
+        }
+    }
+    #endif
+
+    void Start()
+    {
+        // Ensure SoundHandler exists
+        if (SoundHandler.Instance == null)
+        {
+            var soundGO = new GameObject("SoundHandler");
+            soundGO.AddComponent<SoundHandler>();
+            Debug.Log("[BTierHoops] Created SoundHandler");
+        }
+    }
 
     private Rigidbody2D rb;
     private CharacterAnimationController anim;
@@ -44,11 +74,6 @@ public class PlayerController : MonoBehaviour
         // initialize previous facing from Visuals localScale if present
         var v = transform.Find("Visuals");
         if (v != null) _prevFacingSign = v.localScale.x < 0f ? -1 : 1;
-        // prepare an AudioSource for squeaks (2D sound)
-        _squeakSource = GetComponent<AudioSource>();
-        if (_squeakSource == null) _squeakSource = gameObject.AddComponent<AudioSource>();
-        _squeakSource.playOnAwake = false;
-        _squeakSource.spatialBlend = 0f; // 2D
     }
 
     void Update()
@@ -86,13 +111,23 @@ public class PlayerController : MonoBehaviour
         if (currentSign != 0 && currentSign != _prevFacingSign)
         {
             // play squeak when changing direction
+            Debug.Log($"[BTierHoops] Player changed direction: {_prevFacingSign} ? {currentSign}, squeakClip={squeakClip}");
             if (squeakClip != null && Time.time - _lastSqueakTime >= squeakCooldown)
             {
-                if (_squeakSource != null)
-                    _squeakSource.PlayOneShot(squeakClip);
+                Debug.Log("[BTierHoops] Playing squeak!");
+                if (SoundHandler.Instance != null)
+                {
+                    SoundHandler.Instance.PlayClip(squeakClip);
+                }
                 else
-                    AudioSource.PlayClipAtPoint(squeakClip, transform.position);
+                {
+                    Debug.LogError("[BTierHoops] SoundHandler.Instance is null!");
+                }
                 _lastSqueakTime = Time.time;
+            }
+            else if (squeakClip == null)
+            {
+                Debug.LogError("[BTierHoops] squeakClip is NULL - please assign it in Inspector!");
             }
             _prevFacingSign = currentSign;
         }

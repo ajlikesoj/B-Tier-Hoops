@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class GameManager : MonoBehaviour
 {
@@ -41,6 +44,26 @@ public class GameManager : MonoBehaviour
     public string aiName = "";
     [Tooltip("Tier the player is currently fighting. Set by AISpawner so we know which tier to mark defeated on a win.")]
     public AIController.Tier currentMatchTier = AIController.Tier.F;
+
+    [Header("Sfx")]
+    [Tooltip("Swish sound when a basket is scored.")]
+    public AudioClip swishClip;
+
+    #if UNITY_EDITOR
+    void OnValidate()
+    {
+        // Auto-assign swish clip in editor if not set
+        if (swishClip == null)
+        {
+            string[] results = AssetDatabase.FindAssets("swish t:AudioClip");
+            if (results.Length > 0)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(results[0]);
+                swishClip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            }
+        }
+    }
+    #endif
 
     [Header("Out-of-Bounds")]
     public float oobBelowY = -6f;
@@ -160,6 +183,12 @@ public class GameManager : MonoBehaviour
         else aiScore += points;
         UpdateScoreUI();
         Debug.Log($"[BTierHoops] Score! +{points} → {playerName} {playerScore} - {aiName} {aiScore}");
+
+        // Play swish sound
+        if (swishClip != null)
+        {
+            SoundHandler.Instance?.PlayClip(swishClip);
+        }
 
         // Pause the clock until the court resets and the ball drops again
         BallInPlay = false;
