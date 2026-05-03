@@ -255,7 +255,10 @@ public static class CharacterFactory
         float wScale = tierData?.widthScale ?? 1f;
 
         var player = new GameObject(name);
-        player.transform.position = position;
+        Vector3 safePos = MathUtils.ClampFinite(position, Vector3.zero);
+        if (safePos != position)
+            Debug.LogWarning($"[BTierHoops] Replaced invalid character spawn position with {safePos}");
+        player.transform.position = safePos;
 
         var rb = player.AddComponent<Rigidbody2D>();
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;

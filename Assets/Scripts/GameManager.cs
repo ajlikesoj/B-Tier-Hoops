@@ -180,7 +180,10 @@ public class GameManager : MonoBehaviour
         if (ball.IsHeld) ball.Release(Vector2.zero);
         var rb = ball.GetComponent<Rigidbody2D>();
         if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
-        ball.transform.position = ballSpawnPosition;
+        Vector3 spawnPos = MathUtils.ClampFinite(ballSpawnPosition, Vector3.zero);
+        if (spawnPos != ballSpawnPosition)
+            Debug.LogWarning($"[BTierHoops] Invalid ball spawn position replaced with {spawnPos}");
+        ball.transform.position = spawnPos;
         ball.transform.rotation = Quaternion.identity;
     }
 
@@ -189,7 +192,10 @@ public class GameManager : MonoBehaviour
         if (player == null) return;
         var rb = player.GetComponent<Rigidbody2D>();
         if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
-        player.position = playerSpawnPosition;
+        Vector3 ppos = MathUtils.ClampFinite(playerSpawnPosition, Vector3.zero);
+        if (ppos != playerSpawnPosition)
+            Debug.LogWarning($"[BTierHoops] Invalid player spawn position replaced with {ppos}");
+        player.position = ppos;
     }
 
     public void ResetAI()
@@ -197,7 +203,10 @@ public class GameManager : MonoBehaviour
         if (ai == null) return;
         var rb = ai.GetComponent<Rigidbody2D>();
         if (rb != null) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
-        ai.position = aiSpawnPosition;
+        Vector3 apos = MathUtils.ClampFinite(aiSpawnPosition, Vector3.zero);
+        if (apos != aiSpawnPosition)
+            Debug.LogWarning($"[BTierHoops] Invalid AI spawn position replaced with {apos}");
+        ai.position = apos;
     }
 
     public void ResetEverything()

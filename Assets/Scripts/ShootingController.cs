@@ -164,7 +164,11 @@ public class ShootingController : MonoBehaviour
         // Two-hand throwdown visual: spawn the ball clearly above the rim center, then hammer it down.
         ball.lastShotPoints = 2;
         ball.Release(new Vector2(0f, -Mathf.Max(12f, dunkBallSpeed)));
-        ball.transform.position = (Vector3)targetHoop.position + new Vector3(0f, 0.42f, 0f);
+        Vector3 dunkPos = (Vector3)targetHoop.position + new Vector3(0f, 0.42f, 0f);
+        dunkPos = MathUtils.ClampFinite(dunkPos, ball.transform.position);
+        if (dunkPos != (Vector3)targetHoop.position + new Vector3(0f, 0.42f, 0f))
+            Debug.LogWarning($"[BTierHoops] Replaced invalid player dunk position with {dunkPos}");
+        ball.transform.position = dunkPos;
         Debug.Log("[BTierHoops] DUNK by player!");
     }
 
