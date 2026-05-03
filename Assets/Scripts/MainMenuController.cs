@@ -36,6 +36,10 @@ public class MainMenuController : MonoBehaviour
     [Header("Reset progress button (corner)")]
     public Button resetProgressButton;
 
+    [Header("Learning service")]
+    [Tooltip("Must match OpponentLearningService.baseUrl on the Game scene (leaderboard + per-user AI).")]
+    public string learningServiceBaseUrl = "http://127.0.0.1:8765";
+
     static readonly Color UnlockedColor = new Color(0.18f, 0.40f, 0.85f);
     static readonly Color LockedColor   = new Color(0.22f, 0.22f, 0.26f);
     static readonly Color UnlockedTextColor = Color.white;
@@ -65,6 +69,10 @@ public class MainMenuController : MonoBehaviour
 
         ShowMatchResultBanner();
         RefreshUI();
+
+        var canvas = FindFirstObjectByType<Canvas>();
+        if (canvas != null)
+            LeaderboardPanel.Ensure(canvas, learningServiceBaseUrl);
 
         // First launch: prompt for a name. Tiles stay non-clickable until a name is set.
         if (!MatchSettings.HasAccount) ShowNameEntry();
