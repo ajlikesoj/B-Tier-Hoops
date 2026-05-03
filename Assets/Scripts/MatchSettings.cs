@@ -20,6 +20,7 @@ public static class MatchSettings
     const string PrefUnlockedMask = "btierhoops.unlockedMask";
     const string PrefMatchResult = "btierhoops.lastMatchResult";  // "" / "win" / "loss"
     const string PrefMatchResultTier = "btierhoops.lastMatchResultTier"; // tier int
+    const string PrefSeenInstructions = "btierhoops.seenInstructions";   // 0 = first launch, 1 = dismissed
 
     /// <summary>Player's display name. Empty until first signup.</summary>
     public static string PlayerName { get; private set; } = "";
@@ -128,6 +129,16 @@ public static class MatchSettings
         PlayerPrefs.Save();
     }
 
+    /// <summary>True after the user has dismissed the How-to-Play overlay at least once.</summary>
+    public static bool HasSeenInstructions => PlayerPrefs.GetInt(PrefSeenInstructions, 0) == 1;
+
+    /// <summary>Mark the How-to-Play overlay as seen so it stops auto-popping on future launches.</summary>
+    public static void MarkInstructionsSeen()
+    {
+        PlayerPrefs.SetInt(PrefSeenInstructions, 1);
+        PlayerPrefs.Save();
+    }
+
     public static bool TryConsumeMatchResult(out AIController.Tier tier, out bool won)
     {
         string r = PlayerPrefs.GetString(PrefMatchResult, "");
@@ -158,6 +169,7 @@ public static class MatchSettings
         PlayerPrefs.DeleteKey(PrefUnlockedMask);
         PlayerPrefs.DeleteKey(PrefMatchResult);
         PlayerPrefs.DeleteKey(PrefMatchResultTier);
+        PlayerPrefs.DeleteKey(PrefSeenInstructions);
         PlayerPrefs.Save();
         PlayerName = "";
         LearningUserId = "guest";

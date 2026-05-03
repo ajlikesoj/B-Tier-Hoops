@@ -128,8 +128,17 @@ public static class MainMenuBuilder
             new Vector2(20f, 20f), new Vector2(280f, 60f),
             new Color(0.40f, 0.10f, 0.10f), font);
 
+        // How-to-Play button (bottom-right) — opens the overlay anytime
+        var howToBtn = MakeButton(canvasGO.transform, "HowToPlayButton", "HOW TO PLAY",
+            new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f),
+            new Vector2(-20f, 20f), new Vector2(280f, 60f),
+            new Color(0.20f, 0.40f, 0.85f), font);
+
         // Name entry overlay (initially active for first launch)
         var nameEntry = BuildNameEntryPanel(canvasGO.transform, font, out var nameInput, out var nameSubmit);
+
+        // How-to-Play overlay (full-screen panel; auto-shown first launch, dismissed via PLAY button)
+        var howToPanel = BuildHowToPlayPanel(canvasGO.transform, font, out var howToCloseBtn);
 
         // Hook up the controller
         var controllerGO = new GameObject("MainMenuController");
@@ -141,6 +150,9 @@ public static class MainMenuBuilder
         controller.nameInput = nameInput;
         controller.nameSubmitButton = nameSubmit;
         controller.resetProgressButton = resetBtn;
+        controller.howToPlayPanel = howToPanel;
+        controller.howToPlayOpenButton = howToBtn;
+        controller.howToPlayCloseButton = howToCloseBtn;
 
         // Camera + EventSystem (NewSceneSetup gave us a Main Camera; ensure its bg is dark)
         var cam = Camera.main;
@@ -373,6 +385,83 @@ public static class MainMenuBuilder
         submitButton = MakeButton(panel.transform, "SubmitButton", "START",
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
             new Vector2(0f, -120f), new Vector2(420f, 80f),
+            new Color(0.20f, 0.70f, 0.30f), font);
+
+        return panel;
+    }
+
+    static GameObject BuildHowToPlayPanel(Transform parent, TMP_FontAsset font, out Button playButton)
+    {
+        // Full-screen dim overlay with a centered card
+        var panel = new GameObject("HowToPlayPanel");
+        panel.transform.SetParent(parent, false);
+        var pRect = panel.AddComponent<RectTransform>();
+        pRect.anchorMin = Vector2.zero;
+        pRect.anchorMax = Vector2.one;
+        pRect.offsetMin = Vector2.zero;
+        pRect.offsetMax = Vector2.zero;
+        var pImg = panel.AddComponent<Image>();
+        pImg.color = new Color(0f, 0f, 0f, 0.92f);
+
+        // Card backdrop
+        var card = new GameObject("Card");
+        card.transform.SetParent(panel.transform, false);
+        var cardRect = card.AddComponent<RectTransform>();
+        cardRect.anchorMin = new Vector2(0.5f, 0.5f);
+        cardRect.anchorMax = new Vector2(0.5f, 0.5f);
+        cardRect.pivot = new Vector2(0.5f, 0.5f);
+        cardRect.anchoredPosition = Vector2.zero;
+        cardRect.sizeDelta = new Vector2(1380f, 920f);
+        var cardImg = card.AddComponent<Image>();
+        cardImg.color = new Color(0.12f, 0.14f, 0.20f, 0.98f);
+
+        // Orange title underline accent
+        var ul = new GameObject("TitleUnderline");
+        ul.transform.SetParent(card.transform, false);
+        var ulRect = ul.AddComponent<RectTransform>();
+        ulRect.anchorMin = new Vector2(0.5f, 1f);
+        ulRect.anchorMax = new Vector2(0.5f, 1f);
+        ulRect.pivot = new Vector2(0.5f, 1f);
+        ulRect.anchoredPosition = new Vector2(0f, -130f);
+        ulRect.sizeDelta = new Vector2(360f, 6f);
+        var ulImg = ul.AddComponent<Image>();
+        ulImg.color = TitleAccent;
+
+        // Title
+        var titleTmp = MakeText(card.transform, "Title", "HOW TO PLAY",
+            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(0f, -40f), new Vector2(0f, 100f),
+            80f, TextAlignmentOptions.Center, font);
+        titleTmp.fontStyle = FontStyles.Bold;
+
+        // Body — single rich-text TMP block. Padded inside the card.
+        const string body =
+            "<size=44><b><color=#F26B0FFF>WHAT IS B-TIER HOOPS?</color></b></size>\n" +
+            "<size=30>Climb the basketball tiers from F (easiest) to S (hardest). Each opponent is a unique character with their own stats and AI. Beat them to unlock the next tier.</size>\n\n" +
+            "<size=44><b><color=#F26B0FFF>RULES</color></b></size>\n" +
+            "<size=30>• First to 11 points wins\n" +
+            "• 1 minute matches; tied games go to sudden death (next score wins)\n" +
+            "• Shots from your own half count for 3 points; closer shots = 2\n" +
+            "• Slam dunks count for 2 points</size>\n\n" +
+            "<size=44><b><color=#F26B0FFF>CONTROLS</color></b></size>\n" +
+            "<size=30>• <b>WASD / Arrows</b> — Move\n" +
+            "• <b>Space / W</b> — Jump\n" +
+            "• <b>F</b> — Hold to charge a shot, release to shoot\n" +
+            "• <b>Q</b> — Steal the ball (your arm must touch the opponent)\n" +
+            "• <b>R</b> — Restart the current match (after it ends)</size>\n\n" +
+            "<size=26><i>Tip: higher tiers have better stats AND smarter AI. Your name shows up everywhere — including above your head in-game.</i></size>";
+
+        var bodyTmp = MakeText(card.transform, "Body", body,
+            new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
+            new Vector2(0f, -40f), new Vector2(-120f, -260f),
+            32f, TextAlignmentOptions.TopLeft, font);
+        bodyTmp.color = new Color(0.92f, 0.92f, 0.95f);
+        bodyTmp.enableWordWrapping = true;
+
+        // PLAY button (dismisses)
+        playButton = MakeButton(card.transform, "PlayButton", "PLAY",
+            new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            new Vector2(0f, 30f), new Vector2(420f, 80f),
             new Color(0.20f, 0.70f, 0.30f), font);
 
         return panel;
