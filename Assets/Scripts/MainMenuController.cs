@@ -42,6 +42,11 @@ public class MainMenuController : MonoBehaviour
     [Header("Reset progress button (corner)")]
     public Button resetProgressButton;
 
+    [Header("How-to-Play overlay")]
+    public GameObject howToPlayPanel;
+    public Button howToPlayOpenButton;   // sits in the menu corner — re-opens the overlay
+    public Button howToPlayCloseButton;  // "PLAY" button inside the overlay — dismisses it
+
     [Header("Learning service")]
     [Tooltip("Must match OpponentLearningService.baseUrl on the Game scene (leaderboard + per-user AI).")]
     public string learningServiceBaseUrl = "http://127.0.0.1:8765";
@@ -75,6 +80,11 @@ public class MainMenuController : MonoBehaviour
         if (nameSubmitButton != null) nameSubmitButton.onClick.AddListener(OnSubmitName);
         if (nameInput != null) nameInput.onSubmit.AddListener(_ => OnSubmitName());
         if (resetProgressButton != null) resetProgressButton.onClick.AddListener(OnResetProgress);
+        if (howToPlayOpenButton != null) howToPlayOpenButton.onClick.AddListener(ShowHowToPlay);
+        if (howToPlayCloseButton != null) howToPlayCloseButton.onClick.AddListener(HideHowToPlay);
+
+        // First launch: pop the How-to-Play overlay automatically; subsequent launches require the menu button.
+        if (howToPlayPanel != null) howToPlayPanel.SetActive(!MatchSettings.HasSeenInstructions);
 
         ShowMatchResultBanner();
         RefreshUI();
@@ -204,5 +214,18 @@ public class MainMenuController : MonoBehaviour
         RefreshUI();
         ShowNameEntry();
         if (resultBanner != null) resultBanner.text = "PROGRESS RESET";
+    }
+
+    void ShowHowToPlay()
+    {
+        SoundHandler.Instance?.PlayButton();
+        if (howToPlayPanel != null) howToPlayPanel.SetActive(true);
+    }
+
+    void HideHowToPlay()
+    {
+        SoundHandler.Instance?.PlayButton();
+        if (howToPlayPanel != null) howToPlayPanel.SetActive(false);
+        MatchSettings.MarkInstructionsSeen();
     }
 }
