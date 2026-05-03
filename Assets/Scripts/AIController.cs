@@ -1,4 +1,7 @@
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class AIController : MonoBehaviour
@@ -273,6 +276,12 @@ public class AIController : MonoBehaviour
     [Tooltip("Min seconds between block-jump attempts.")]
     public float blockJumpCooldown = 1.5f;
 
+    [Header("Sfx")]
+    [Tooltip("Clip to play when the AI changes direction.")]
+    public AudioClip squeakClip;
+    [Tooltip("Minimum seconds between squeaks.")]
+    public float squeakCooldown = 0.12f;
+
     [Header("State (read-only)")]
     public State currentState = State.Idle;
 
@@ -298,6 +307,8 @@ public class AIController : MonoBehaviour
     private bool dunkAttemptThisPossession = false;
     private float dunkJumpTime = -1f;
     private Transform prevBallHolder = null;
+    private float _lastSqueakTime = -999f;
+    private int _prevFacingSign = 1;
 
     private float _baseReactionDelay;
     private float _baseDefenseStandoff;
@@ -318,7 +329,27 @@ public class AIController : MonoBehaviour
             if (hoop != null) targetSide = hoop.side;
         }
         ApplyTierPreset();
+
+        // initialize previous facing from Visuals localScale if present
+        var v = transform.Find("Visuals");
+        if (v != null) _prevFacingSign = v.localScale.x < 0f ? -1 : 1;
     }
+
+    #if UNITY_EDITOR
+    void OnValidate()
+    {
+        // Auto-assign squeak clip in editor if not set
+        if (squeakClip == null)
+        {
+            string[] results = AssetDatabase.FindAssets("squeak t:AudioClip");
+            if (results.Length > 0)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(results[0]);
+                squeakClip = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            }
+        }
+    }
+    #endif
 
     /// <summary>Push the current tier's stats onto this controller. Call after changing `tier` from code.</summary>
     public void ApplyTierPreset()
@@ -704,6 +735,16 @@ public class AIController : MonoBehaviour
         float vx = rb.linearVelocity.x;
         if (Mathf.Abs(vx) > 0.1f)
         {
+            int currentSign = vx > 0 ? 1 : -1;
+
+            // Play squeak when direction changes
+            if (currentSign != _prevFacingSign && squeakClip != null && Time.time - _lastSqueakTime >= squeakCooldown)
+            {
+                SoundHandler.Instance?.PlayClip(squeakClip);
+                _lastSqueakTime = Time.time;
+            }
+            _prevFacingSign = currentSign;
+
             var v = transform.Find("Visuals");
             if (v != null)
             {
