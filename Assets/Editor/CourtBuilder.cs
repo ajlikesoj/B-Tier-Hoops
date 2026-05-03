@@ -140,6 +140,9 @@ public static class CourtBuilder
         var playerCtrl = player.GetComponent<PlayerController>();
         if (playerCtrl != null) playerCtrl.ball = ball;
 
+        // Floating name tag above the player's head — populated at runtime from MatchSettings.PlayerName
+        player.AddComponent<PlayerNameTag>();
+
         // Game manager + UI
         var gm = BuildGameManager(ball);
         gm.player = player.transform;
@@ -150,6 +153,9 @@ public static class CourtBuilder
         SetupCamera();
 
         BuildSoundHandler();
+
+        // Fireworks display — Celebrate(tier) is called by GameManager.EndMatch on player win.
+        new GameObject("FireworksDisplay").AddComponent<FireworksDisplay>();
 
         // EventSystem — required for the win panel's Return-to-Menu button to receive clicks
         if (Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
@@ -205,7 +211,7 @@ public static class CourtBuilder
         // ---- Sun ----
         var sun = new GameObject("Sun");
         sun.transform.SetParent(root.transform);
-        sun.transform.localPosition = new Vector3(8.5f, 4.5f, 4.8f);
+        sun.transform.localPosition = new Vector3(8.5f, 5.7f, 4.8f);
         sun.transform.localScale = new Vector3(1.5f, 1.5f, 1f);
         var sunSr = sun.AddComponent<SpriteRenderer>();
         sunSr.sprite = circle;
@@ -222,10 +228,12 @@ public static class CourtBuilder
         glowSr.sortingOrder = -25;
 
         // ---- Clouds (a few puffy white blobs) ----
-        BuildCloud(circle, root.transform, new Vector3(-7f, 4.2f, 4.7f), 1.4f);
-        BuildCloud(circle, root.transform, new Vector3( 0f, 5.0f, 4.7f), 1.0f);
-        BuildCloud(circle, root.transform, new Vector3( 4f, 3.6f, 4.7f), 1.2f);
-        BuildCloud(circle, root.transform, new Vector3(-10f, 2.8f, 4.7f), 0.9f);
+        // Kept clear of the top-center ~y=4.5+ zone so they don't sit behind the white timer/score
+        // UI text and turn it into white-on-white mush.
+        // Just two clouds — left of the scoreboard and just left of the sun. Center stays clear so
+        // the timer/score and the sun anchor each side of the sky cleanly.
+        BuildCloud(circle, root.transform, new Vector3(-8.5f, 5.0f, 4.7f), 1.4f);
+        BuildCloud(circle, root.transform, new Vector3( 6.5f, 4.2f, 4.7f), 1.2f);
 
         // ---- Distant grass strip behind the court (peeks above the floor) ----
         Quad("GrassStrip", ws, new Vector3(0, -1.9f, 4.4f), new Vector3(40f, 0.6f, 1f), GrassGreen, -22, root.transform);
@@ -495,7 +503,9 @@ public static class CourtBuilder
     {
         var meter = new GameObject("ChargeMeter");
         meter.transform.SetParent(player);
-        meter.transform.localPosition = new Vector3(0f, 1.25f, 0f);
+        // Raised from 1.25 → 1.55 so it sits above the player's floating name tag (which is centered
+        // at y≈1.10 with letters extending up to ~1.24). Still close enough to read as part of the player.
+        meter.transform.localPosition = new Vector3(0f, 1.55f, 0f);
 
         Quad("Bg", ws, Vector3.zero, new Vector3(1.4f, 0.18f, 1f), new Color(0.10f, 0.10f, 0.13f, 0.85f), 30, meter.transform);
 
@@ -578,7 +588,7 @@ public static class CourtBuilder
         panelRect.offsetMin = Vector2.zero;
         panelRect.offsetMax = Vector2.zero;
         var panelImg = winPanelGO.AddComponent<Image>();
-        panelImg.color = new Color(0f, 0f, 0f, 0.78f);
+        panelImg.color = new Color(0f, 0f, 0f, 0.50f); // dimmer so end-of-match fireworks are visible behind it
 
         gm.winText = MakeTMPText(winPanelGO.transform, "WinText", "PLAYER WINS!",
             new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f),

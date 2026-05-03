@@ -184,7 +184,7 @@ public class GameManager : MonoBehaviour
         UpdateScoreUI();
         Debug.Log($"[BTierHoops] Score! +{points} → {playerName} {playerScore} - {aiName} {aiScore}");
 
-        // Play swish sound
+        // Play swish sound on every made basket
         if (swishClip != null)
         {
             SoundHandler.Instance?.PlayClip(swishClip);
@@ -274,6 +274,16 @@ public class GameManager : MonoBehaviour
         if (winText != null) winText.text = winner + unlockBanner;
         if (winPanel != null) winPanel.SetActive(true);
         Debug.Log($"[BTierHoops] Match ended: {winner} ({playerScore}-{aiScore}){unlockBanner.Replace("\n", " ")}");
+
+        // Cut crowd ambience so end-of-match audio (fireworks, etc.) reads cleanly
+        SoundHandler.Instance?.PlayCrowd(false);
+
+        // Tier-scaled fireworks (visuals + audio) when the human wins
+        if (playerWon)
+        {
+            var fireworks = FindFirstObjectByType<FireworksDisplay>();
+            if (fireworks != null) fireworks.Celebrate(currentMatchTier);
+        }
 
         var learn = GetComponent<OpponentLearningService>();
         if (learn == null) learn = FindFirstObjectByType<OpponentLearningService>();

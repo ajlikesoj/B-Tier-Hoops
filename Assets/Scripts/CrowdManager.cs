@@ -28,7 +28,25 @@ public class CrowdManager : MonoBehaviour
 
         int count = AttendanceForTier(tier);
         ApplyAttendance(count);
+        ApplyCrowdAmbience(count);
         Debug.Log($"[BTierHoops] Crowd: {count} people watching tier {tier}");
+    }
+
+    void ApplyCrowdAmbience(int count)
+    {
+        if (SoundHandler.Instance == null) return;
+        if (count <= 0)
+        {
+            // F-tier: empty arena, no crowd noise
+            SoundHandler.Instance.PlayCrowd(false);
+            return;
+        }
+        // Volume scales with attendance: 3 fans whisper, 100 fans roar.
+        // Curve uses sqrt(count/maxCount) so small crowds are still audible but not absurdly loud.
+        int maxCount = (tierAttendance != null && tierAttendance.Length > 0) ? tierAttendance[tierAttendance.Length - 1] : 100;
+        float t = Mathf.Sqrt(Mathf.Clamp01((float)count / Mathf.Max(1, maxCount)));
+        float volume = Mathf.Lerp(0.18f, 0.85f, t);
+        SoundHandler.Instance.PlayCrowd(true, null, volume);
     }
 
     int AttendanceForTier(AIController.Tier t)
