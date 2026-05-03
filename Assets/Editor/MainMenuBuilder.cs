@@ -97,6 +97,11 @@ public static class MainMenuBuilder
                                                     typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
         }
 
+        // SoundHandler singleton (DontDestroyOnLoad survives the swap into Game scene).
+        // Auto-loads its crowd clip via SoundHandler.OnValidate.
+        var soundGO = new GameObject("SoundHandler");
+        soundGO.AddComponent<SoundHandler>();
+
         // Save the scene to Assets/Scenes/MainMenu.unity
         const string scenePath = "Assets/Scenes/MainMenu.unity";
         Directory.CreateDirectory("Assets/Scenes");

@@ -149,6 +149,8 @@ public static class CourtBuilder
 
         SetupCamera();
 
+        BuildSoundHandler();
+
         // EventSystem — required for the win panel's Return-to-Menu button to receive clicks
         if (Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
         {
@@ -529,6 +531,17 @@ public static class CourtBuilder
         gm.ball = ball;
         gm.ballSpawnPosition = new Vector3(0f, 1f, 0f);
         return gm;
+    }
+
+    // ---------- Sound handler (singleton w/ DontDestroyOnLoad) ----------
+    // SoundHandler.Instance must exist for any of Diego's audio hooks (dribble, rim, charge,
+    // squeak, etc.) to make sound. SoundHandler.Awake auto-rejects duplicates, so creating it
+    // in both Game and MainMenu is safe — whichever loads first wins, the other is destroyed.
+    static void BuildSoundHandler()
+    {
+        var go = new GameObject("SoundHandler");
+        go.AddComponent<SoundHandler>();
+        // crowdClip auto-resolves via SoundHandler.OnValidate (searches Assets/Audio for "crowd").
     }
 
     // ---------- UI (timer, score, win panel + return-to-menu button) ----------
