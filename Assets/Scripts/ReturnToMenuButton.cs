@@ -20,6 +20,7 @@ public class ReturnToMenuButton : MonoBehaviour
     void OnClicked()
     {
         Debug.Log($"[BTierHoops] Return-to-Menu clicked → loading '{MatchSettings.MainMenuSceneName}'");
+        SoundHandler.Instance?.PlayButton();
         try
         {
             SceneManager.LoadScene(MatchSettings.MainMenuSceneName);

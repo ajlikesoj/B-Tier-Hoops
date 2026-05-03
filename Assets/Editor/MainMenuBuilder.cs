@@ -10,7 +10,29 @@ using System.Linq;
 public static class MainMenuBuilder
 {
     static readonly Color BgDark = new Color(0.06f, 0.05f, 0.09f);
+    static readonly Color BgAccent = new Color(0.10f, 0.13f, 0.22f);  // subtle two-tone backdrop band
     static readonly Color CardBg = new Color(0.10f, 0.10f, 0.13f, 0.95f);
+    static readonly Color TitleAccent = new Color(0.96f, 0.42f, 0.05f); // basketball orange
+
+    static Color Brighten(Color c, float factor)
+    {
+        return new Color(Mathf.Min(1f, c.r * factor), Mathf.Min(1f, c.g * factor), Mathf.Min(1f, c.b * factor), c.a);
+    }
+
+    // Per-tier base color (used by MainMenuController.RefreshUI for the unlocked tile color).
+    static Color TierColor(AIController.Tier t)
+    {
+        switch (t)
+        {
+            case AIController.Tier.F: return new Color(0.78f, 0.22f, 0.22f); // red
+            case AIController.Tier.D: return new Color(0.92f, 0.50f, 0.18f); // orange
+            case AIController.Tier.C: return new Color(0.85f, 0.75f, 0.20f); // yellow
+            case AIController.Tier.B: return new Color(0.30f, 0.70f, 0.35f); // green
+            case AIController.Tier.A: return new Color(0.20f, 0.55f, 0.92f); // blue
+            case AIController.Tier.S: return new Color(0.75f, 0.40f, 0.95f); // purple
+            default:                  return new Color(0.18f, 0.40f, 0.85f);
+        }
+    }
 
     [MenuItem("BTierHoops/Build Main Menu Scene")]
     public static void BuildMainMenu()
@@ -28,25 +50,59 @@ public static class MainMenuBuilder
         // Full-screen dark background
         MakeFullScreenImage(canvasGO.transform, "Background", BgDark);
 
+        // Subtle accent band behind the title for visual depth
+        var accentBand = new GameObject("TitleBand");
+        accentBand.transform.SetParent(canvasGO.transform, false);
+        var bandRect = accentBand.AddComponent<RectTransform>();
+        bandRect.anchorMin = new Vector2(0f, 1f);
+        bandRect.anchorMax = new Vector2(1f, 1f);
+        bandRect.pivot = new Vector2(0.5f, 1f);
+        bandRect.anchoredPosition = new Vector2(0f, -10f);
+        bandRect.sizeDelta = new Vector2(0f, 280f);
+        var bandImg = accentBand.AddComponent<Image>();
+        bandImg.color = BgAccent;
+
+        // Orange underline beneath the title — basketball flavor
+        var underline = new GameObject("TitleUnderline");
+        underline.transform.SetParent(canvasGO.transform, false);
+        var ulRect = underline.AddComponent<RectTransform>();
+        ulRect.anchorMin = new Vector2(0.5f, 1f);
+        ulRect.anchorMax = new Vector2(0.5f, 1f);
+        ulRect.pivot = new Vector2(0.5f, 1f);
+        ulRect.anchoredPosition = new Vector2(0f, -150f);
+        ulRect.sizeDelta = new Vector2(560f, 8f);
+        var ulImg = underline.AddComponent<Image>();
+        ulImg.color = TitleAccent;
+
         // Title
         var title = MakeText(canvasGO.transform, "Title", "B-TIER HOOPS",
             new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -60f), new Vector2(0f, 130f),
-            120f, TextAlignmentOptions.Center, font);
+            new Vector2(0f, -30f), new Vector2(0f, 140f),
+            140f, TextAlignmentOptions.Center, font);
         title.fontStyle = FontStyles.Bold;
+        title.color = Color.white;
+
+        // Subtitle (small caps, accent-colored)
+        var subtitle = MakeText(canvasGO.transform, "Subtitle", "CLIMB THE TIERS · BEAT EVERY OPPONENT",
+            new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
+            new Vector2(0f, -178f), new Vector2(0f, 36f),
+            26f, TextAlignmentOptions.Center, font);
+        subtitle.color = new Color(0.85f, 0.65f, 0.40f);
+        subtitle.fontStyle = FontStyles.Bold;
+        subtitle.characterSpacing = 12f;
 
         // Greeting (welcome + name)
         var greeting = MakeText(canvasGO.transform, "Greeting", "WELCOME",
             new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -200f), new Vector2(0f, 60f),
-            42f, TextAlignmentOptions.Center, font);
+            new Vector2(0f, -230f), new Vector2(0f, 50f),
+            38f, TextAlignmentOptions.Center, font);
         greeting.color = new Color(0.85f, 0.85f, 0.90f);
 
         // Result banner (last match outcome — populated by MainMenuController)
         var banner = MakeText(canvasGO.transform, "ResultBanner", "",
             new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -270f), new Vector2(0f, 60f),
-            38f, TextAlignmentOptions.Center, font);
+            new Vector2(0f, -300f), new Vector2(0f, 50f),
+            32f, TextAlignmentOptions.Center, font);
         banner.fontStyle = FontStyles.Bold;
 
         // 6 tier tiles in a 3×2 grid, centered on canvas
@@ -207,6 +263,8 @@ public static class MainMenuBuilder
 
     static MainMenuController.TierTile MakeTierTile(Transform parent, AIController.Tier tier, Vector2 anchoredCenter, Vector2 size, TMP_FontAsset font)
     {
+        Color tierColor = TierColor(tier);
+
         var go = new GameObject($"Tile_{tier}");
         go.transform.SetParent(parent, false);
         var rect = go.AddComponent<RectTransform>();
@@ -217,21 +275,64 @@ public static class MainMenuBuilder
         rect.sizeDelta = size;
 
         var bg = go.AddComponent<Image>();
-        bg.color = new Color(0.18f, 0.40f, 0.85f);
+        bg.color = tierColor;
         var btn = go.AddComponent<Button>();
+        // Soft tint feedback when hovered/clicked (Unity Button only tints DOWN from base, so highlight = slight darken).
+        btn.colors = new ColorBlock {
+            normalColor = Color.white,
+            highlightedColor = new Color(0.88f, 0.88f, 0.88f, 1f),
+            pressedColor    = new Color(0.70f, 0.70f, 0.70f, 1f),
+            selectedColor   = Color.white,
+            disabledColor   = new Color(0.55f, 0.55f, 0.55f, 1f),
+            colorMultiplier = 1f,
+            fadeDuration    = 0.08f,
+        };
+
+        // Top stripe accent (a brighter tier-color band along the top)
+        var stripe = new GameObject("Stripe");
+        stripe.transform.SetParent(go.transform, false);
+        var stripeRect = stripe.AddComponent<RectTransform>();
+        stripeRect.anchorMin = new Vector2(0f, 1f);
+        stripeRect.anchorMax = new Vector2(1f, 1f);
+        stripeRect.pivot = new Vector2(0.5f, 1f);
+        stripeRect.anchoredPosition = Vector2.zero;
+        stripeRect.sizeDelta = new Vector2(0f, 14f);
+        var stripeImg = stripe.AddComponent<Image>();
+        stripeImg.color = Brighten(tierColor, 1.25f);
 
         // Big tier letter (top of tile)
         var letterLabel = MakeText(go.transform, "TierLetter", tier.ToString(),
             new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, 30f), Vector2.zero,
-            120f, TextAlignmentOptions.Center, font);
+            new Vector2(0f, 40f), Vector2.zero,
+            130f, TextAlignmentOptions.Center, font);
         letterLabel.fontStyle = FontStyles.Bold;
 
         // Character name (below letter)
         var nameLabel = MakeText(go.transform, "Name", AIController.GetTierData(tier).displayName,
             new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(0.5f, 0.5f),
-            new Vector2(0f, -70f), Vector2.zero,
-            36f, TextAlignmentOptions.Center, font);
+            new Vector2(0f, -55f), Vector2.zero,
+            34f, TextAlignmentOptions.Center, font);
+
+        // Difficulty dots (6 evenly-spaced dots along the bottom; first N "lit" by RefreshUI)
+        const int dotCount = 6;
+        const float dotSize = 16f;
+        const float dotSpacing = 26f;
+        var dots = new Image[dotCount];
+        float startX = -((dotCount - 1) * dotSpacing) * 0.5f;
+        for (int i = 0; i < dotCount; i++)
+        {
+            var dot = new GameObject($"Dot_{i}");
+            dot.transform.SetParent(go.transform, false);
+            var dRect = dot.AddComponent<RectTransform>();
+            dRect.anchorMin = new Vector2(0.5f, 0f);
+            dRect.anchorMax = new Vector2(0.5f, 0f);
+            dRect.pivot = new Vector2(0.5f, 0f);
+            dRect.anchoredPosition = new Vector2(startX + i * dotSpacing, 22f);
+            dRect.sizeDelta = new Vector2(dotSize, dotSize);
+            var dImg = dot.AddComponent<Image>();
+            dImg.color = new Color(0.18f, 0.18f, 0.20f); // RefreshUI repaints
+            dots[i] = dImg;
+        }
 
         return new MainMenuController.TierTile {
             tier = tier,
@@ -239,6 +340,9 @@ public static class MainMenuBuilder
             background = bg,
             tierLetterLabel = letterLabel,
             nameLabel = nameLabel,
+            unlockedColor = tierColor,
+            stripe = stripeImg,
+            difficultyDots = dots,
         };
     }
 

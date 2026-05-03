@@ -99,6 +99,13 @@ public static class CharacterFactory
             (-0.40f,  0.00f, 0.20f, 1.00f),
             ( 0.00f, -0.40f, 1.00f, 0.20f),
         },
+        ['M'] = new (float, float, float, float)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),    // left vertical
+            ( 0.40f,  0.00f, 0.20f, 1.00f),    // right vertical
+            (-0.20f,  0.30f, 0.20f, 0.20f),    // upper-left diagonal step
+            ( 0.20f,  0.30f, 0.20f, 0.20f),    // upper-right diagonal step
+            ( 0.00f,  0.10f, 0.20f, 0.20f),    // center "V" point
+        },
         ['N'] = new (float, float, float, float)[] {
             (-0.40f,  0.00f, 0.20f, 1.00f),
             ( 0.40f,  0.00f, 0.20f, 1.00f),
@@ -106,11 +113,25 @@ public static class CharacterFactory
             ( 0.00f,  0.00f, 0.20f, 0.20f),
             ( 0.15f, -0.20f, 0.20f, 0.20f),
         },
+        ['O'] = new (float, float, float, float)[] {
+            (-0.40f,  0.00f, 0.20f, 0.80f),    // left vertical
+            ( 0.40f,  0.00f, 0.20f, 0.80f),    // right vertical
+            ( 0.00f,  0.40f, 0.80f, 0.20f),    // top horizontal
+            ( 0.00f, -0.40f, 0.80f, 0.20f),    // bottom horizontal
+        },
         ['P'] = new (float, float, float, float)[] {
             (-0.40f,  0.00f, 0.20f, 1.00f),
             (-0.10f,  0.40f, 0.80f, 0.20f),
             (-0.10f,  0.05f, 0.80f, 0.20f),
             ( 0.40f,  0.25f, 0.20f, 0.50f),
+        },
+        ['Q'] = new (float, float, float, float)[] {
+            (-0.40f,  0.00f, 0.20f, 0.80f),    // O ring
+            ( 0.40f,  0.00f, 0.20f, 0.80f),
+            ( 0.00f,  0.40f, 0.80f, 0.20f),
+            ( 0.00f, -0.40f, 0.80f, 0.20f),
+            ( 0.30f, -0.30f, 0.20f, 0.20f),    // tail diagonal
+            ( 0.45f, -0.45f, 0.18f, 0.18f),
         },
         ['R'] = new (float, float, float, float)[] {
             (-0.40f,  0.00f, 0.20f, 1.00f),
@@ -127,6 +148,15 @@ public static class CharacterFactory
             ( 0.40f, -0.20f, 0.20f, 0.40f),
             ( 0.00f, -0.40f, 1.00f, 0.20f),
         },
+        ['T'] = new (float, float, float, float)[] {
+            ( 0.00f,  0.40f, 1.00f, 0.20f),    // top horizontal
+            ( 0.00f,  0.00f, 0.20f, 0.80f),    // center vertical
+        },
+        ['U'] = new (float, float, float, float)[] {
+            (-0.40f,  0.10f, 0.20f, 0.80f),    // left vertical
+            ( 0.40f,  0.10f, 0.20f, 0.80f),    // right vertical
+            ( 0.00f, -0.40f, 0.80f, 0.20f),    // bottom horizontal
+        },
         ['V'] = new (float, float, float, float)[] {
             (-0.40f,  0.20f, 0.20f, 0.60f),
             ( 0.40f,  0.20f, 0.20f, 0.60f),
@@ -134,12 +164,38 @@ public static class CharacterFactory
             ( 0.20f, -0.10f, 0.20f, 0.30f),
             ( 0.00f, -0.35f, 0.20f, 0.30f),
         },
+        ['W'] = new (float, float, float, float)[] {
+            (-0.40f,  0.00f, 0.20f, 1.00f),    // left vertical
+            ( 0.40f,  0.00f, 0.20f, 1.00f),    // right vertical
+            (-0.20f, -0.30f, 0.20f, 0.20f),    // lower-left diagonal step
+            ( 0.20f, -0.30f, 0.20f, 0.20f),    // lower-right diagonal step
+            ( 0.00f, -0.10f, 0.20f, 0.20f),    // center "M" point (inverted M)
+        },
+        ['X'] = new (float, float, float, float)[] {
+            // Two diagonals approximated as 5-step staircases sharing center
+            (-0.40f,  0.40f, 0.20f, 0.20f),
+            (-0.20f,  0.20f, 0.20f, 0.20f),
+            ( 0.00f,  0.00f, 0.20f, 0.20f),
+            ( 0.20f, -0.20f, 0.20f, 0.20f),
+            ( 0.40f, -0.40f, 0.20f, 0.20f),
+            ( 0.40f,  0.40f, 0.20f, 0.20f),
+            ( 0.20f,  0.20f, 0.20f, 0.20f),
+            (-0.20f, -0.20f, 0.20f, 0.20f),
+            (-0.40f, -0.40f, 0.20f, 0.20f),
+        },
         ['Y'] = new (float, float, float, float)[] {
             (-0.40f,  0.30f, 0.20f, 0.40f),
             ( 0.40f,  0.30f, 0.20f, 0.40f),
             (-0.20f,  0.05f, 0.20f, 0.20f),
             ( 0.20f,  0.05f, 0.20f, 0.20f),
             ( 0.00f, -0.20f, 0.20f, 0.60f),
+        },
+        ['Z'] = new (float, float, float, float)[] {
+            ( 0.00f,  0.40f, 1.00f, 0.20f),    // top horizontal
+            ( 0.20f,  0.20f, 0.20f, 0.20f),    // diagonal stair (top-right)
+            ( 0.00f,  0.00f, 0.20f, 0.20f),    // diagonal stair (center)
+            (-0.20f, -0.20f, 0.20f, 0.20f),    // diagonal stair (bottom-left)
+            ( 0.00f, -0.40f, 1.00f, 0.20f),    // bottom horizontal
         },
     };
 

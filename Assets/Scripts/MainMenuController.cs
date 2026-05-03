@@ -19,6 +19,12 @@ public class MainMenuController : MonoBehaviour
         public Image background;
         public TMP_Text tierLetterLabel;
         public TMP_Text nameLabel;
+        [Tooltip("Tile color when unlocked (set per-tier by MainMenuBuilder so each tier reads as a distinct difficulty).")]
+        public Color unlockedColor = new Color(0.18f, 0.40f, 0.85f);
+        [Tooltip("Stripe accent at top of tile (also tinted to unlockedColor when unlocked).")]
+        public Image stripe;
+        [Tooltip("Difficulty dots — first N (where N = tier index + 1) light up in unlockedColor when unlocked.")]
+        public Image[] difficultyDots;
     }
 
     [Header("Tier tiles (one per tier — set up by MainMenuBuilder)")]
@@ -40,14 +46,17 @@ public class MainMenuController : MonoBehaviour
     [Tooltip("Must match OpponentLearningService.baseUrl on the Game scene (leaderboard + per-user AI).")]
     public string learningServiceBaseUrl = "http://127.0.0.1:8765";
 
-    static readonly Color UnlockedColor = new Color(0.18f, 0.40f, 0.85f);
-    static readonly Color LockedColor   = new Color(0.22f, 0.22f, 0.26f);
+    static readonly Color LockedColor       = new Color(0.22f, 0.22f, 0.26f);
+    static readonly Color LockedStripeColor = new Color(0.30f, 0.30f, 0.34f);
+    static readonly Color LockedDotColor    = new Color(0.30f, 0.30f, 0.34f);
     static readonly Color UnlockedTextColor = Color.white;
     static readonly Color LockedTextColor   = new Color(0.55f, 0.55f, 0.60f);
 
     void Awake()
     {
         MatchSettings.Load();
+        // No matches happening on the menu — silence any crowd ambience left over from a previous game.
+        if (SoundHandler.Instance != null) SoundHandler.Instance.PlayCrowd(false);
     }
 
     void Start()
@@ -88,8 +97,9 @@ public class MainMenuController : MonoBehaviour
         foreach (var t in tiles)
         {
             bool unlocked = MatchSettings.IsTierUnlocked(t.tier);
-            if (t.background != null) t.background.color = unlocked ? UnlockedColor : LockedColor;
-            if (t.button != null) t.button.interactable = unlocked && MatchSettings.HasAccount;
+            if (t.background != null) t.background.color = unlocked ? t.unlockedColor : LockedColor;
+            if (t.stripe != null)     t.stripe.color     = unlocked ? Brighten(t.unlockedColor, 1.25f) : LockedStripeColor;
+            if (t.button != null)     t.button.interactable = unlocked && MatchSettings.HasAccount;
             if (t.tierLetterLabel != null)
             {
                 t.tierLetterLabel.text = t.tier.ToString();
@@ -100,7 +110,22 @@ public class MainMenuController : MonoBehaviour
                 t.nameLabel.text = unlocked ? AIController.GetTierData(t.tier).displayName : "LOCKED";
                 t.nameLabel.color = unlocked ? UnlockedTextColor : LockedTextColor;
             }
+            if (t.difficultyDots != null)
+            {
+                int litCount = (int)t.tier + 1;  // F=1 dot, S=6 dots
+                Color litColor = unlocked ? Brighten(t.unlockedColor, 1.4f) : LockedDotColor;
+                for (int i = 0; i < t.difficultyDots.Length; i++)
+                {
+                    if (t.difficultyDots[i] == null) continue;
+                    t.difficultyDots[i].color = i < litCount ? litColor : new Color(0.18f, 0.18f, 0.20f);
+                }
+            }
         }
+    }
+
+    static Color Brighten(Color c, float factor)
+    {
+        return new Color(Mathf.Min(1f, c.r * factor), Mathf.Min(1f, c.g * factor), Mathf.Min(1f, c.b * factor), c.a);
     }
 
     void ShowMatchResultBanner()
@@ -139,6 +164,7 @@ public class MainMenuController : MonoBehaviour
         if (!MatchSettings.IsTierUnlocked(tier)) return;
         if (!MatchSettings.HasAccount) { ShowNameEntry(); return; }
 
+        SoundHandler.Instance?.PlayButton();
         MatchSettings.SetSelectedTier(tier);
         SceneManager.LoadScene(MatchSettings.GameSceneName);
     }
@@ -148,6 +174,7 @@ public class MainMenuController : MonoBehaviour
         if (nameInput == null) return;
         string name = nameInput.text;
         if (string.IsNullOrWhiteSpace(name)) return;
+        SoundHandler.Instance?.PlayButton();
         MatchSettings.SetPlayerName(name);
         HideNameEntry();
         RefreshUI();
@@ -172,6 +199,7 @@ public class MainMenuController : MonoBehaviour
 
     void OnResetProgress()
     {
+        SoundHandler.Instance?.PlayButton();
         MatchSettings.ResetAll();
         RefreshUI();
         ShowNameEntry();

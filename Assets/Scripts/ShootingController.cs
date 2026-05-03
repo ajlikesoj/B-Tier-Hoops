@@ -86,6 +86,9 @@ public class ShootingController : MonoBehaviour
 
         if (!ball.IsHeld || ball.holder != transform)
         {
+            // Ball was stolen / released / never-held — kill the charge-up loop so it doesn't keep
+            // playing after we've lost possession.
+            if (isCharging) SoundHandler.Instance?.StopLoop();
             isCharging = false;
             currentCharge = 0f;
             if (anim != null) anim.SetCharge(0f);
@@ -195,6 +198,7 @@ public class ShootingController : MonoBehaviour
         if (dunkPos != (Vector3)targetHoop.position + new Vector3(0f, 0.42f, 0f))
             Debug.LogWarning($"[BTierHoops] Replaced invalid player dunk position with {dunkPos}");
         ball.transform.position = dunkPos;
+        SoundHandler.Instance?.PlayDunkBoom();
         Debug.Log("[BTierHoops] DUNK by player!");
     }
 

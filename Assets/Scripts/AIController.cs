@@ -726,6 +726,7 @@ public class AIController : MonoBehaviour
         if (dunkPos != (Vector3)targetHoop.position + new Vector3(0f, 0.42f, 0f))
             Debug.LogWarning($"[BTierHoops] Replaced invalid dunk position with {dunkPos}");
         ball.transform.position = dunkPos;
+        SoundHandler.Instance?.PlayDunkBoom();
         Debug.Log($"[BTierHoops] DUNK by {aiName}!");
         return true;
     }
