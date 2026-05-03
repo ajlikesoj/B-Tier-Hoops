@@ -1,0 +1,78 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to the License Client on channel: "LicenseClient-Ajay Kumaran" at "2026-05-03T19:16:29.798296Z"
+[Licensing::Client] Error: Code 10 while verifying Licensing Client signature (process Id: 23644, path: "C:/Program Files/Unity Hub/UnityLicensingClient_V1/Unity.Licensing.Client.exe")
+[Licensing::Module] Error: LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.17.4+4293ba1
+  Session Id:              46d1350ae7624e609e19cc85293d0759
+  Correlation Id:          4513fca5b1ef769550d19d1249947b95
+  External correlation Id: 7107978555104643188
+  Machine Id:              dSOVi7WdyzQF8IMCgKM2V++QItk=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-Ajay Kumaran" (connect: 0.00s, validation: 0.01s, handshake: 0.08s)
+[Licensing::IpcConnector] Successfully connected to the License Notification on channel: "LicenseClient-Ajay Kumaran-notifications" at "2026-05-03T19:16:29.8898195Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully updated license
+Built from 'trunk' branch; Version is '6000.0.16f1 (ae37dbaefed8) revision 11417563'; Using compiler version '193933523'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) 64bit Core' Language: 'en' Physical Memory: 15774 MB
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Serial number assigned to: "20066145063178-UnityPersXXXX"
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1, IsPro: 0
+[Licensing::Client] Successfully resolved entitlement details
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.0.16f1\Editor\Unity.exe
+-batchmode
+-projectPath
+C:\Users\Ajay Kumaran\Desktop\Classes\Video Games\B-Tier-Hoops
+-buildWindowsPlayer
+C:\Users\Ajay Kumaran\Desktop\Classes\Video Games\B-Tier-Hoops\Builds\Windows\B-Tier-Hoops.exe
+-quit
+-nographics
+-logFile
+C:\Users\Ajay Kumaran\Desktop\Classes\Video Games\B-Tier-Hoops\build.log
+Successfully changed project path to: C:\Users\Ajay Kumaran\Desktop\Classes\Video Games\B-Tier-Hoops
+C:/Users/Ajay Kumaran/Desktop/Classes/Video Games/B-Tier-Hoops
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [25940]  Target information:
+
+Player connection [25940]  * "[IP] 192.168.1.72 [Port] 55504 [Flags] 2 [Guid] 2859733589 [EditorId] 2859733589 [Version] 1048832 [Id] WindowsEditor(7,Nightwing) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [25940] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [25940] Host joined alternative multi-casting on [225.0.0.222:34997]...
+[Package Manager] Connected to IPC stream "Upm-20416" after 0.0 seconds.
+Library Redirect Path: Library/
+Cannot upgrade database Library/SourceAssetDB. Will delete the database and recreate content in the new format instead.

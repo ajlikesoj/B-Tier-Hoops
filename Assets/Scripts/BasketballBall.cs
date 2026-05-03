@@ -77,6 +77,12 @@ public class BasketballBall : MonoBehaviour
             localOffset.x *= facing;
 
         Vector3 offset = new Vector3(localOffset.x, localOffset.y, -0.02f);
-        transform.position = holder.position + offset;
+        Vector3 newPos = holder.position + offset;
+        if (!MathUtils.IsFinite(newPos))
+        {
+            Debug.LogWarning($"[BTierHoops] Skipping invalid ball position: {newPos}");
+            return;
+        }
+        transform.position = newPos;
     }
 }

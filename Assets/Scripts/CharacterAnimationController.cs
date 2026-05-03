@@ -270,7 +270,6 @@ public class CharacterAnimationController : MonoBehaviour
                 headTiltDeg = -4f;
                 break;
             }
-                break;
 
             case Motion.Shoot:
             {

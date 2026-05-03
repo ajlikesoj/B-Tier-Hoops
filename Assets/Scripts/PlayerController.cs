@@ -101,7 +101,8 @@ public class PlayerController : MonoBehaviour
         isGrounded = false;
         if (groundCheck == null) return;
 
-        int count = Physics2D.OverlapCircleNonAlloc(groundCheck.position, groundCheckRadius, groundHits);
+        var contactFilter = ContactFilter2D.noFilter;
+        int count = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, contactFilter, groundHits);
         for (int i = 0; i < count; i++)
         {
             var c = groundHits[i];
