@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 /// <summary>
@@ -22,6 +23,9 @@ public static class MatchSettings
 
     /// <summary>Player's display name. Empty until first signup.</summary>
     public static string PlayerName { get; private set; } = "";
+
+    /// <summary>Slug sent to learning_service so telemetry and profiles are per player.</summary>
+    public static string LearningUserId { get; private set; } = "guest";
 
     /// <summary>Tier the user picked from the menu — read by AISpawner in the Game scene.</summary>
     public static AIController.Tier SelectedTier { get; private set; } = AIController.Tier.F;
@@ -48,8 +52,39 @@ public static class MatchSettings
     public static void SetPlayerName(string name)
     {
         PlayerName = (name ?? "").Trim();
+        LearningUserId = BuildLearningUserId(PlayerName);
         PlayerPrefs.SetString(PrefPlayerName, PlayerName);
         PlayerPrefs.Save();
+    }
+
+    /// <summary>Stable URL-safe id derived from the display name (learning_service file name).</summary>
+    public static string BuildLearningUserId(string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName)) return "guest";
+        var sb = new StringBuilder();
+        bool lastUnderscore = false;
+        foreach (char c in displayName.Trim().ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                sb.Append(c);
+                lastUnderscore = false;
+            }
+            else if (c == ' ' || c == '_' || c == '-')
+            {
+                if (!lastUnderscore && sb.Length > 0)
+                {
+                    sb.Append('_');
+                    lastUnderscore = true;
+                }
+            }
+        }
+        while (sb.Length > 0 && sb[sb.Length - 1] == '_')
+            sb.Length--;
+        string s = sb.ToString();
+        if (string.IsNullOrEmpty(s)) return "guest";
+        if (s.Length > 48) s = s.Substring(0, 48);
+        return s;
     }
 
     /// <summary>
@@ -110,6 +145,7 @@ public static class MatchSettings
     public static void Load()
     {
         PlayerName = PlayerPrefs.GetString(PrefPlayerName, "");
+        LearningUserId = BuildLearningUserId(PlayerName);
         // Default unlocked mask = F only. Always keep F unlocked.
         unlockedMask = PlayerPrefs.GetInt(PrefUnlockedMask, 1 << (int)AIController.Tier.F);
         unlockedMask |= 1 << (int)AIController.Tier.F;
@@ -124,6 +160,7 @@ public static class MatchSettings
         PlayerPrefs.DeleteKey(PrefMatchResultTier);
         PlayerPrefs.Save();
         PlayerName = "";
+        LearningUserId = "guest";
         unlockedMask = 1 << (int)AIController.Tier.F;
         SelectedTier = AIController.Tier.F;
         HasMenuSelectedTier = false;
