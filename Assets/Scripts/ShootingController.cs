@@ -42,6 +42,10 @@ public class ShootingController : MonoBehaviour
     [Header("State (read-only)")]
     [Range(0f, 1f)] public float currentCharge;
     public bool isCharging;
+    [Header("Sfx")]
+    public AudioClip chargeupClip;
+    [Tooltip("Loop volume for charge-up (0-1)")]
+    [Range(0f,1f)] public float chargeupVolume = 0.9f;
 
     private PlayerController playerCtrl;
     private CharacterAnimationController anim;
@@ -56,6 +60,21 @@ public class ShootingController : MonoBehaviour
             if (hoop != null) targetSide = hoop.side;
         }
     }
+
+#if UNITY_EDITOR
+    void OnValidate()
+    {
+        if (chargeupClip == null)
+        {
+            string[] results = UnityEditor.AssetDatabase.FindAssets("chargeup t:AudioClip");
+            if (results.Length > 0)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(results[0]);
+                chargeupClip = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            }
+        }
+    }
+#endif
 
     void Update()
     {
@@ -82,6 +101,9 @@ public class ShootingController : MonoBehaviour
             isCharging = true;
             currentCharge = 0f;
             if (anim != null) anim.SetCharge(0f);
+            // start charge-up loop
+            if (chargeupClip != null)
+                SoundHandler.Instance?.PlayLoop(chargeupClip, chargeupVolume);
         }
 
         if (isCharging && fHeld)
@@ -92,6 +114,8 @@ public class ShootingController : MonoBehaviour
 
         if (fUp && isCharging)
         {
+            // stop charge-up loop before shooting
+            SoundHandler.Instance?.StopLoop();
             Shoot();
             isCharging = false;
             currentCharge = 0f;
@@ -113,6 +137,8 @@ public class ShootingController : MonoBehaviour
 
     void Shoot()
     {
+        // Ensure any charge loop is stopped when shooting
+        SoundHandler.Instance?.StopLoop();
         if (TryDunk())
         {
             if (anim != null) anim.TriggerDunk();
